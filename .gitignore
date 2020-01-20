@@ -102,3 +102,13 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+
+#perso
+
+DATA/*
+log/*
+*.csv
+*.lp
+*.ipynb
+
