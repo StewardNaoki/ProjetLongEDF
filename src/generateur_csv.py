@@ -15,7 +15,7 @@ def test_read(csv_file_name):
     # Y = np.asarray(eval(Y))
     # print(Y[0])
 
-def generate_csv(num_var, num_const, num_prob):
+def generate_csv(file_name ,num_var, num_const, num_prob):
 
     dict_input = {"A": [], "B": [] , "C" : [], "Solution" : []}
 
@@ -77,7 +77,7 @@ def generate_csv(num_var, num_const, num_prob):
     df_input = pd.DataFrame(dict_input)
     # df_input = df_input.sample(frac=1).reset_index(drop=True)
     # print(df_input.head())
-    df_input.to_csv('./../DATA/input.csv', index=False)
+    df_input.to_csv(file_name, index=False)
 
 
 
@@ -92,7 +92,7 @@ def generate_csv(num_var, num_const, num_prob):
 
 
 
-    test_read('./../DATA/input.csv')
+    test_read(file_name)
 
 
 
@@ -110,7 +110,7 @@ def main():
 
     args = parser.parse_args()
 
-    generate_csv(args.num_var, args.num_const, args.num_prob)
+    generate_csv('./../DATA/input.csv', args.num_var, args.num_const, args.num_prob)
 
     
 
