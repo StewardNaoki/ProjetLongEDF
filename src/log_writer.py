@@ -17,25 +17,34 @@ def generate_unique_logpath(logdir, raw_run_name):
             return log_path
         i = i + 1
 
-def write_log(log_file_path, acc, loss):
+def write_log(log_file_path, val_acc, val_loss, train_acc, train_loss):
     with open(log_file_path, "a") as f:
         print("Logging to {}".format(log_file_path))
-        f.write(f"{round(time.time(),3)},{round(float(acc),2)},{round(float(loss),4)}\n")
+        f.write(f"{round(time.time(),3)},{round(float(val_acc),2)},{round(float(val_loss),4)},{round(float(train_acc),2)},{round(float(train_loss),4)}\n")
 
 def create_acc_loss_graph(log_file_path):
     contents = open(log_file_path, "r").read().split("\n")
 
-    times = []
-    accuracies = []
-    losses = []
+    list_time = []
+    list_train_acc = []
+    list_train_loss = []
+
+    list_val_acc = []
+    list_val_loss = []
 
     for c in contents:
         if "," in c:
-            timestamp, acc, loss = c.split(",")
+            timestamp, val_acc, val_loss, train_acc, train_loss = c.split(",")
 
-            times.append(timestamp)
-            accuracies.append(acc)
-            losses.append(loss)
+            list_time.append(float(timestamp))
+
+            list_val_acc.append(float(val_acc))
+            list_val_loss.append(float(val_loss))
+
+            list_train_acc.append(float(train_acc))
+            list_train_loss.append(float(train_loss))
+
+            
 
 
     fig = plt.figure()
@@ -44,8 +53,10 @@ def create_acc_loss_graph(log_file_path):
     ax2 = plt.subplot2grid((2,1), (1,0), sharex=ax1)
 
 
-    ax1.plot(times, accuracies, label="in_samp_acc")
+    ax1.plot(list_time, list_train_acc, label="train_acc")
+    ax1.plot(list_time, list_val_acc, label="val_acc")
     ax1.legend(loc=2)
-    ax2.plot(times,losses, label="in_samp_loss")
+    ax2.plot(list_time,list_train_loss, label="train_loss")
+    ax2.plot(list_time,list_val_loss, label="val_loss")
     ax2.legend(loc=2)
     plt.show()

@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import argparse
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-# from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 import pandas as pd
 import time
@@ -19,10 +19,6 @@ import csv
 
 import generateur_csv as g_csv
 import log_writer as lw
-
-
-#import generateur_csv.py
-# import csv
 
 # set to true to one once, then back to false unless you want to change something in your training data.
 CREATE_CSV = True
@@ -36,11 +32,13 @@ MODEL_PATH = LOG_DIR + FC1 + BEST_MODELE
 # MODELE_LOG_FILE = LOG_DIR + "modele.log"
 # MODELE_TIME = f"model-{int(time.time())}"
 METRICS = "metrics/"
+TENSORBOARD = "tensorboard/"
 DIEZ = "##########"
-# tensorboard_writer   = SummaryWriter(log_dir = LOG_DIR)
+tensorboard_writer   = SummaryWriter(log_dir = LOG_DIR+TENSORBOARD)
 
 
 class LP_data(Dataset):
+
     """Face Landmarks dataset."""
 
     def __init__(self, csv_file_name, transform=None):
@@ -146,22 +144,16 @@ class FullyConnectedRegularized(nn.Module):
         # fully connected layer, output 10 classes
         self.fc3 = nn.Linear(100, 100)
         # fully connected layer, output 10 classes
-        self.fc4 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
-        self.fc5 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
         self.fcOut = nn.Linear(100, num_var)
 
         self.hiddenLayer = nn.Sequential(#TODO Dropout
+            nn.Dropout(0.2),
             self.fc1,
             nn.ReLU(),
+            nn.Dropout(0.5),
             self.fc2,
             nn.ReLU(),
             self.fc3,
-            nn.ReLU(),
-            self.fc4,
-            nn.ReLU(),
-            self.fc5,
             nn.ReLU(),
         )
 
@@ -417,12 +409,12 @@ def main():
 
             model_checkpoint.update(val_loss)
 
-            lw.write_log(log_file_path, val_acc, val_loss)
+            lw.write_log(log_file_path, val_acc, val_loss, train_acc, train_loss)
 
-            # tensorboard_writer.add_scalar(METRICS + 'train_loss', train_loss, t)
-            # tensorboard_writer.add_scalar(METRICS + 'train_acc',  train_acc, t)
-            # tensorboard_writer.add_scalar(METRICS + 'val_loss', val_loss, t)
-            # tensorboard_writer.add_scalar(METRICS + 'val_acc',  val_acc, t)
+            tensorboard_writer.add_scalar(METRICS + 'train_loss', train_loss, t)
+            tensorboard_writer.add_scalar(METRICS + 'train_acc',  train_acc, t)
+            tensorboard_writer.add_scalar(METRICS + 'val_loss', val_loss, t)
+            tensorboard_writer.add_scalar(METRICS + 'val_acc',  val_acc, t)
 
     model.load_state_dict(torch.load(MODEL_PATH))
     print(DIEZ+" Final Test "+DIEZ)
@@ -431,7 +423,7 @@ def main():
     print(" Test       : Loss : {:.4f}, Acc : {:.4f}".format(
         test_loss, test_acc))
 
-    lw.create_acc_loss_graph(log_file_path)
+    # lw.create_acc_loss_graph(log_file_path)
 
 
 if __name__ == "__main__":
