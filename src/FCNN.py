@@ -195,32 +195,32 @@ def train(model, loader, f_loss, optimizer, device):
 
     N = 0
     tot_loss, correct = 0.0, 0.0
-    with tqdm(total=len(loader)) as pbar:
-        for i, (inputs, targets) in enumerate(loader):
-            pbar.update(1)
-            pbar.set_description("Training step {}".format(i))
-            # print("****", inputs.shape)
-            inputs, targets = inputs.to(device), targets.to(device)
-            # print("***",inputs.shape)
+    # with tqdm(total=len(loader)) as pbar:
+    for i, (inputs, targets) in enumerate(loader):
+        # pbar.update(1)
+        # pbar.set_description("Training step {}".format(i))
+        # print("****", inputs.shape)
+        inputs, targets = inputs.to(device), targets.to(device)
+        # print("***",inputs.shape)
 
-            # Compute the forward pass through the network up to the loss
-            outputs = model(inputs)
+        # Compute the forward pass through the network up to the loss
+        outputs = model(inputs)
 
-            loss = f_loss(outputs, targets)
-            # print("Loss: ", loss)
-            N += inputs.shape[0]
-            tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
+        loss = f_loss(outputs, targets)
+        # print("Loss: ", loss)
+        N += inputs.shape[0]
+        tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
 
-            # print("Output: ", outputs)
-            predicted_targets = outputs
+        # print("Output: ", outputs)
+        predicted_targets = outputs
 
-            correct += (predicted_targets == targets).sum().item()
+        correct += (predicted_targets == targets).sum().item()
 
-            optimizer.zero_grad()
-            # model.zero_grad()
-            loss.backward()
-            # model.penalty().backward()
-            optimizer.step()
+        optimizer.zero_grad()
+        # model.zero_grad()
+        loss.backward()
+        # model.penalty().backward()
+        optimizer.step()
     return tot_loss/N, correct/N
 
 
@@ -249,39 +249,39 @@ def test(model, loader, f_loss, device, final_test=False):
         N = 0
         tot_loss, correct = 0.0, 0.0
         # with open(MODELE_LOG_FILE, "a") as f:
-        with tqdm(total=len(loader)) as pbar:
-            for i, (inputs, targets) in enumerate(loader):
-                pbar.update(1)
-                pbar.set_description("Testing step {}".format(i))
-                # We got a minibatch from the loader within inputs and targets
-                # With a mini batch size of 128, we have the following shapes
-                #    inputs is of shape (128, 1, 28, 28)
-                #    targets is of shape (128)
+        #with tqdm(total=len(loader)) as pbar:
+        for i, (inputs, targets) in enumerate(loader):
+            # pbar.update(1)
+            # pbar.set_description("Testing step {}".format(i))
+            # We got a minibatch from the loader within inputs and targets
+            # With a mini batch size of 128, we have the following shapes
+            #    inputs is of shape (128, 1, 28, 28)
+            #    targets is of shape (128)
 
-                # We need to copy the data on the GPU if we use one
-                inputs, targets = inputs.to(device), targets.to(device)
+            # We need to copy the data on the GPU if we use one
+            inputs, targets = inputs.to(device), targets.to(device)
 
-                # Compute the forward pass, i.e. the scores for each input image
-                outputs = model(inputs)
+            # Compute the forward pass, i.e. the scores for each input image
+            outputs = model(inputs)
 
-                # We accumulate the exact number of processed samples
-                N += inputs.shape[0]
+            # We accumulate the exact number of processed samples
+            N += inputs.shape[0]
 
-                # We accumulate the loss considering
-                # The multipliation by inputs.shape[0] is due to the fact
-                # that our loss criterion is averaging over its samples
-                tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
+            # We accumulate the loss considering
+            # The multipliation by inputs.shape[0] is due to the fact
+            # that our loss criterion is averaging over its samples
+            tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
 
-                # For the accuracy, we compute the labels for each input image
-                # Be carefull, the model is outputing scores and not the probabilities
-                # But given the softmax is not altering the rank of its input scores
-                # we can compute the label by argmaxing directly the scores
-                predicted_targets = outputs
-                correct += (predicted_targets == targets).sum().item()
+            # For the accuracy, we compute the labels for each input image
+            # Be carefull, the model is outputing scores and not the probabilities
+            # But given the softmax is not altering the rank of its input scores
+            # we can compute the label by argmaxing directly the scores
+            predicted_targets = outputs
+            correct += (predicted_targets == targets).sum().item()
 
-                if final_test:
-                    print("targets:\n", targets[0])
-                    print("predicted targets:\n", outputs[0])
+            if final_test:
+                print("targets:\n", targets[0])
+                print("predicted targets:\n", outputs[0])
 
     return tot_loss/N, correct/N
 
@@ -301,8 +301,8 @@ class ModelCheckpoint:
             self.min_loss = loss
 
 
-def progress(loss, acc):
-    print(' Training   : Loss : {:2.4f}, Acc : {:2.4f}\r'.format(loss, acc))
+def progress(loss, acc, description = "Training"):
+    print(description + '   : Loss : {:2.4f}, Acc : {:2.4f}\r'.format(loss, acc))
     sys.stdout.flush()
 
 
@@ -371,6 +371,7 @@ def main():
 
     #TODO params
     num_param = args.num_var + args.num_const + (args.num_var*args.num_const)
+    print("Number of parameters: ", num_param)
     model = FullyConnectedRegularized(
         l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
     print("Network architechture:\n", model)
@@ -393,19 +394,22 @@ def main():
     model_checkpoint = ModelCheckpoint(top_logdir + BEST_MODELE, model)
 
     log_file_path = lw.generate_unique_logpath(LOG_DIR, "Linear")
-
-    for t in tqdm(range(args.epoch)):
-            # pbar.set_description("Epoch Number{}".format(t))
-            print(DIEZ + "Epoch Number: {}".format(t) + DIEZ)
+    with tqdm(total=args.epoch) as pbar:
+        for t in range(args.epoch):
+            pbar.update(1)
+            pbar.set_description("Epoch Number{}".format(t))
+            # print("\n\n",DIEZ + "Epoch Number: {}".format(t) + DIEZ)
             train_loss, train_acc = train(
                 model, train_loader, f_loss, optimizer, device)
 
-            progress(train_loss, train_acc)
+            progress(train_loss, train_acc, description="Trainning")
             time.sleep(0.5)
 
             val_loss, val_acc = test(model, test_loader, f_loss, device)
-            print(" Validation : Loss : {:.4f}, Acc : {:.4f}".format(
-                val_loss, val_acc))
+
+            progress( val_loss, val_acc, description= "Validation")
+            # print("\n\n","Validation : Loss : {:.4f}, Acc : {:.4f}".format(
+            #     val_loss, val_acc))
 
             model_checkpoint.update(val_loss)
 
