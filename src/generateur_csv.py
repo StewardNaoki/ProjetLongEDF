@@ -22,7 +22,7 @@ def generate_csv(file_name ,num_var, num_const, num_prob):
     for k in tqdm(range(num_prob)):
         C = []
         for i in range(num_var):
-            C.append(uniform( 0,1))
+            C.append(uniform(uniform(uniform(0,1),uniform(0,1)))
 
 
         A = []
@@ -30,8 +30,8 @@ def generate_csv(file_name ,num_var, num_const, num_prob):
         for j in range(num_const):
             A.append([])
             for i in range(num_var):
-                A[j].append(uniform(0,5))
-            B.append(uniform(2,5))
+                A[j].append(uniform(uniform(0,1),uniform(0,1)))
+            B.append(uniform(uniform(1,10), uniform(0,10)))
 
         # print("A ",A)
         # print(len(A))

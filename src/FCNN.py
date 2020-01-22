@@ -146,15 +146,19 @@ class FullyConnectedRegularized(nn.Module):
         # fully connected layer, output 10 classes
         self.fcOut = nn.Linear(100, num_var)
 
-        self.hiddenLayer = nn.Sequential(#TODO Dropout
+        self.Layers = nn.Sequential(#TODO Dropout
+
             nn.Dropout(0.2),
-            self.fc1,
+            self.fcIn,
             nn.ReLU(),
             nn.Dropout(0.5),
+            self.fc1,
+            nn.ReLU(),
             self.fc2,
             nn.ReLU(),
             self.fc3,
             nn.ReLU(),
+            self.fcOut
         )
 
     def penalty(self):
@@ -164,9 +168,7 @@ class FullyConnectedRegularized(nn.Module):
         # x = x.view(x.size(0), -1)
         # print("num_param =", self.num_param)
         # print("true num_param =", x.shape)
-        x = nn.functional.relu(self.fcIn(x))
-        x = self.hiddenLayer(x)
-        output = self.fcOut(x)
+        output = self.Layer(x)
         # return output, x    # return x for visualization
         return output
 
