@@ -19,7 +19,7 @@ import csv
 
 import generateur_csv as g_csv
 import log_writer as lw
-import dataset as ds
+import Dataset as ds
 import Network as nw
 
 # set to true to one once, then back to false unless you want to change something in your training data.
@@ -165,6 +165,7 @@ def main():
 
     # f_loss = torch.nn.CrossEntropyLoss() #TODO
     f_loss = nn.MSELoss()
+    f_loss_custom = nw.CustomLoss(args.num_const)
     optimizer = torch.optim.Adam(model.parameters())
 
     top_logdir = LOG_DIR + FC1

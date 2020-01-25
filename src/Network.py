@@ -160,3 +160,21 @@ def test(model, loader, f_loss, device, final_test=False):
                 print("predicted targets:\n", outputs[0])
 
     return tot_loss/N, correct/N
+
+
+# def custom_locc(output, target, input):
+#     loss = torch.mean((output - target)**2)
+#     return loss
+
+
+class CustomLoss():
+    def __init__(self, num_cont):
+        self.num_const =num_cont
+
+    def __call__(self, output, target, input):
+        output_cost =torch.tensor([output[i] * input[-self.num_const:][i] for i in range(self.num_const)])
+        target_cost =torch.tensor([target[i] * input[-self.num_const:][i] for i in range(self.num_const)] )
+
+        print(target_cost)
+        print(output_cost)
+        return torch.mean((output_cost - target_cost)**2)
