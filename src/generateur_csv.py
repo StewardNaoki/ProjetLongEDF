@@ -20,9 +20,9 @@ def test_read(csv_file_name):
 def generate_csv(file_name, num_var, num_const, num_prob):
 
 
-    print("number of variables: ",args.num_var)
-    print("number of const: ",args.num_const)
-    print("number of problem: ",args.num_prob)
+    print("number of variables: ",num_var)
+    print("number of const: ",num_const)
+    print("number of problem: ",num_prob)
     dict_input = {"A": [], "B": [], "C": [], "Solution": []}
 
     for k in tqdm(range(num_prob)):
