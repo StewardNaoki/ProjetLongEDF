@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import argparse
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-# from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 import pandas as pd
 import time
@@ -36,7 +36,7 @@ MODEL_PATH = LOG_DIR + FC1 + BEST_MODELE
 METRICS = "metrics/"
 TENSORBOARD = "tensorboard/"
 DIEZ = "##########"
-# tensorboard_writer   = SummaryWriter(log_dir = LOG_DIR+TENSORBOARD)
+tensorboard_writer   = SummaryWriter(log_dir = LOG_DIR+TENSORBOARD)
 
 
 
@@ -206,10 +206,10 @@ def main():
             lw.write_log(log_file_path, val_acc,
                          val_loss, train_acc, train_loss)
 
-            # tensorboard_writer.add_scalar(METRICS + 'train_loss', train_loss, t)
-            # tensorboard_writer.add_scalar(METRICS + 'train_acc',  train_acc, t)
-            # tensorboard_writer.add_scalar(METRICS + 'val_loss', val_loss, t)
-            # tensorboard_writer.add_scalar(METRICS + 'val_acc',  val_acc, t)
+            tensorboard_writer.add_scalar(METRICS + 'train_loss', train_loss, t)
+            tensorboard_writer.add_scalar(METRICS + 'train_acc',  train_acc, t)
+            tensorboard_writer.add_scalar(METRICS + 'val_loss', val_loss, t)
+            tensorboard_writer.add_scalar(METRICS + 'val_acc',  val_acc, t)
 
     model.load_state_dict(torch.load(MODEL_PATH))
     print(DIEZ+" Final Test "+DIEZ)

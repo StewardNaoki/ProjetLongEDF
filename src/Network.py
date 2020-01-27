@@ -18,9 +18,9 @@ class FullyConnectedRegularized(nn.Module):
         # fully connected layer, output 10 classes
         self.fc1 = nn.Linear(100, 100)
         # fully connected layer, output 10 classes
-        self.fc2 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
-        self.fc3 = nn.Linear(100, 100)
+        # self.fc2 = nn.Linear(100, 100)
+        # # fully connected layer, output 10 classes
+        # self.fc3 = nn.Linear(100, 100)
         # fully connected layer, output 10 classes
         self.fcOut = nn.Linear(100, num_var)
 
@@ -32,16 +32,16 @@ class FullyConnectedRegularized(nn.Module):
             nn.Dropout(0.5),
             self.fc1,
             nn.ReLU(),
-            self.fc2,
-            nn.ReLU(),
-            self.fc3,
-            nn.ReLU(),
+            # self.fc2,
+            # nn.ReLU(),
+            # self.fc3,
+            # nn.ReLU(),
             self.fcOut
         )
 
     def penalty(self):
-        return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fc3.weight.norm(2) + self.fcFinal.weight.norm(2))
-        # return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
+        # return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fc3.weight.norm(2) + self.fcFinal.weight.norm(2))
+        return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
         assert (x.shape[1] == self.num_param),"Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(self.num_param, x.shape[1])
