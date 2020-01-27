@@ -6,9 +6,9 @@ from torchvision import transforms
 import time
 
 
-class FullyConnectedRegularized(nn.Module):
+class FullyConnectedRegularized1(nn.Module):
     def __init__(self, num_param, num_var, l2_reg):
-        super(FullyConnectedRegularized, self).__init__()
+        super(FullyConnectedRegularized1, self).__init__()
 
         self.l2_reg = l2_reg
         self.num_param = num_param
@@ -19,7 +19,7 @@ class FullyConnectedRegularized(nn.Module):
         self.fc1 = nn.Linear(100, 100)
         # fully connected layer, output 10 classes
         # self.fc2 = nn.Linear(100, 100)
-        # # fully connected layer, output 10 classes
+        # fully connected layer, output 10 classes
         # self.fc3 = nn.Linear(100, 100)
         # fully connected layer, output 10 classes
         self.fcOut = nn.Linear(100, num_var)
@@ -40,8 +40,102 @@ class FullyConnectedRegularized(nn.Module):
         )
 
     def penalty(self):
-        # return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fc3.weight.norm(2) + self.fcFinal.weight.norm(2))
+        # return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fcFinal.weight.norm(2))
         return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
+
+    def forward(self, x):
+        assert (x.shape[1] == self.num_param),"Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(self.num_param, x.shape[1])
+        # x = x.view(x.size(0), -1)
+        # print("num_param =", self.num_param)
+        # print("true num_param =", x.shape)
+        output = self.Layers(x)
+        # return output, x    # return x for visualization
+        return output
+
+
+class FullyConnectedRegularized2(nn.Module):
+    def __init__(self, num_param, num_var, l2_reg):
+        super(FullyConnectedRegularized2, self).__init__()
+
+        self.l2_reg = l2_reg
+        self.num_param = num_param
+
+        # fully connected layer, output 10 classes
+        self.fcIn = nn.Linear(num_param, 100)
+        # fully connected layer, output 10 classes
+        self.fc1 = nn.Linear(100, 100)
+        # fully connected layer, output 10 classes
+        self.fc2 = nn.Linear(100, 100)
+        # fully connected layer, output 10 classes
+        # self.fc3 = nn.Linear(100, 100)
+        # fully connected layer, output 10 classes
+        self.fcOut = nn.Linear(100, num_var)
+
+        self.Layers = nn.Sequential(
+
+            nn.Dropout(0.2),
+            self.fcIn,
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            self.fc1,
+            nn.ReLU(),
+            self.fc2,
+            nn.ReLU(),
+            # self.fc3,
+            # nn.ReLU(),
+            self.fcOut
+        )
+
+    def penalty(self):
+        return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fcFinal.weight.norm(2))
+        # return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
+
+    def forward(self, x):
+        assert (x.shape[1] == self.num_param),"Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(self.num_param, x.shape[1])
+        # x = x.view(x.size(0), -1)
+        # print("num_param =", self.num_param)
+        # print("true num_param =", x.shape)
+        output = self.Layers(x)
+        # return output, x    # return x for visualization
+        return output
+
+
+class FullyConnectedRegularized3(nn.Module):
+    def __init__(self, num_param, num_var, l2_reg):
+        super(FullyConnectedRegularized3, self).__init__()
+
+        self.l2_reg = l2_reg
+        self.num_param = num_param
+
+        # fully connected layer, output 10 classes
+        self.fcIn = nn.Linear(num_param, 100)
+        # fully connected layer, output 10 classes
+        self.fc1 = nn.Linear(100, 100)
+        # fully connected layer, output 10 classes
+        self.fc2 = nn.Linear(100, 100)
+        # fully connected layer, output 10 classes
+        self.fc3 = nn.Linear(100, 100)
+        # fully connected layer, output 10 classes
+        self.fcOut = nn.Linear(100, num_var)
+
+        self.Layers = nn.Sequential(
+
+            nn.Dropout(0.2),
+            self.fcIn,
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            self.fc1,
+            nn.ReLU(),
+            self.fc2,
+            nn.ReLU(),
+            self.fc3,
+            nn.ReLU(),
+            self.fcOut
+        )
+
+    def penalty(self):
+        return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fc3.weight.norm(2) + self.fcFinal.weight.norm(2))
+        # return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
         assert (x.shape[1] == self.num_param),"Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(self.num_param, x.shape[1])

@@ -109,6 +109,8 @@ def main():
                         help="number of problems to generate (default: 10)")
     parser.add_argument("--custom_loss", type=bool, default=False,
                         help="Use of custom loss (default: False)")
+    parser.add_argument("--num_deep_layer", type = int , default=1,
+                        help="Number of deep layer used (default: 1)")
 
     args = parser.parse_args()
 
@@ -154,8 +156,14 @@ def main():
     print("number of const: ",args.num_const)
     num_param = args.num_var + args.num_const + (args.num_var*args.num_const)
     print("Number of parameters: ", num_param)
-    model = nw.FullyConnectedRegularized(
-        l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+    if args.num_deep_layer == 1:
+        model = nw.FullyConnectedRegularized1(l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+    elif args.num_deep_layer == 2:
+        model = nw.FullyConnectedRegularized2(l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+    elif args.num_deep_layer == 3:
+        model = nw.FullyConnectedRegularized3(l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+    else:
+        assert(False), "Not number of correct deep layers: {}".format(args.num_deep_layer)
     print("Network architechture:\n", model)
 
     use_gpu = torch.cuda.is_available()
@@ -186,7 +194,7 @@ def main():
     with tqdm(total=args.epoch) as pbar:
         for t in range(args.epoch):
             pbar.update(1)
-            pbar.set_description("Epoch Number{}".format(t))
+            pbar.set_description("Epoch Number {}".format(t))
             # print("\n\n",DIEZ + "Epoch Number: {}".format(t) + DIEZ)
             train_loss, train_acc = nw.train(
                 model, train_loader, f_loss, optimizer, device, custom_loss= args.custom_loss)
