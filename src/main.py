@@ -103,10 +103,12 @@ def main():
 
     parser.add_argument("--num_var", type=int, default=5,
                         help="Number of variables (default: 5)")
-    parser.add_argument("--num_const", type=int, default=4,
-                        help="number of constrains (default: 4)")
+    parser.add_argument("--num_const", type=int, default=8,
+                        help="number of constrains (default: 8)")
     parser.add_argument("--num_prob", type=int, default=10,
                         help="number of problems to generate (default: 10)")
+    parser.add_argument("--custom_loss", type=bool, default=False,
+                        help="Use of custom loss (default: False)")
 
     args = parser.parse_args()
 
@@ -148,7 +150,8 @@ def main():
     #     print("input:\n",inputs)
     #     print("target:\n", targets)
 
-    #TODO params
+    print("number of variables: ",args.num_var)
+    print("number of const: ",args.num_const)
     num_param = args.num_var + args.num_const + (args.num_var*args.num_const)
     print("Number of parameters: ", num_param)
     model = nw.FullyConnectedRegularized(
@@ -164,8 +167,14 @@ def main():
     model.to(device)
 
     # f_loss = torch.nn.CrossEntropyLoss() #TODO
-    f_loss = nn.MSELoss()
-    f_loss_custom = nw.CustomLoss(args.num_const)
+    if args.custom_loss:
+        print("Custom loss used")
+        f_loss = nw.CustomLoss(args.num_var)
+        # f_loss = nw.MyLoss()
+    else:
+        print("MSE loss used")
+        f_loss = nn.MSELoss()
+    
     optimizer = torch.optim.Adam(model.parameters())
 
     top_logdir = LOG_DIR + FC1
@@ -180,12 +189,13 @@ def main():
             pbar.set_description("Epoch Number{}".format(t))
             # print("\n\n",DIEZ + "Epoch Number: {}".format(t) + DIEZ)
             train_loss, train_acc = nw.train(
-                model, train_loader, f_loss, optimizer, device)
+                model, train_loader, f_loss, optimizer, device, custom_loss= args.custom_loss)
 
             progress(train_loss, train_acc, description="Trainning")
             time.sleep(0.5)
-
-            val_loss, val_acc = nw.test(model, test_loader, f_loss, device)
+            # print(args.custom_loss)
+            val_loss, val_acc = nw.test(
+                model, test_loader, f_loss, device, custom_loss= args.custom_loss)
 
             progress(val_loss, val_acc, description="Validation")
             # print("\n\n","Validation : Loss : {:.4f}, Acc : {:.4f}".format(
@@ -203,8 +213,9 @@ def main():
 
     model.load_state_dict(torch.load(MODEL_PATH))
     print(DIEZ+" Final Test "+DIEZ)
+
     test_loss, test_acc = nw.test(
-        model, test_loader, f_loss, device, final_test=True)
+        model, test_loader, f_loss, device, final_test=True, custom_loss= args.custom_loss)
     print(" Test       : Loss : {:.4f}, Acc : {:.4f}".format(
         test_loss, test_acc))
 

@@ -24,7 +24,7 @@ class FullyConnectedRegularized(nn.Module):
         # fully connected layer, output 10 classes
         self.fcOut = nn.Linear(100, num_var)
 
-        self.Layers = nn.Sequential(  # TODO Dropout
+        self.Layers = nn.Sequential(
 
             nn.Dropout(0.2),
             self.fcIn,
@@ -41,8 +41,10 @@ class FullyConnectedRegularized(nn.Module):
 
     def penalty(self):
         return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fc3.weight.norm(2) + self.fcFinal.weight.norm(2))
+        # return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
+        assert (x.shape[1] == self.num_param),"Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(self.num_param, x.shape[1])
         # x = x.view(x.size(0), -1)
         # print("num_param =", self.num_param)
         # print("true num_param =", x.shape)
@@ -51,7 +53,7 @@ class FullyConnectedRegularized(nn.Module):
         return output
 
 
-def train(model, loader, f_loss, optimizer, device):
+def train(model, loader, f_loss, optimizer, device, custom_loss = False):
     """
     Train a model for one epoch, iterating over the loader
     using the f_loss to compute the loss and the optimizer
@@ -85,10 +87,19 @@ def train(model, loader, f_loss, optimizer, device):
         # Compute the forward pass through the network up to the loss
         outputs = model(inputs)
 
-        loss = f_loss(outputs, targets)
-        # print("Loss: ", loss)
+        if(custom_loss):
+            loss = f_loss(outputs, targets, inputs)
+            # print("loss ", loss)
+            tot_loss += inputs.shape[0] * f_loss(outputs, targets, inputs).item()
+        else:
+
+            loss = f_loss(outputs, targets)
+            # print("loss ", loss)
+            tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
+
         N += inputs.shape[0]
-        tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
+
+        assert(loss.requires_grad), "No gradient for loss"
 
         # print("Output: ", outputs)
         predicted_targets = outputs
@@ -103,7 +114,7 @@ def train(model, loader, f_loss, optimizer, device):
     return tot_loss/N, correct/N
 
 
-def test(model, loader, f_loss, device, final_test=False):
+def test(model, loader, f_loss, device, final_test=False, custom_loss = False):
     """
     Test a model by iterating over the loader
 
@@ -146,7 +157,12 @@ def test(model, loader, f_loss, device, final_test=False):
             # We accumulate the loss considering
             # The multipliation by inputs.shape[0] is due to the fact
             # that our loss criterion is averaging over its samples
-            tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
+
+
+            if(custom_loss):
+                tot_loss += inputs.shape[0] * f_loss(outputs, targets, inputs).item()
+            else:
+                tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
 
             # For the accuracy, we compute the labels for each input image
             # Be carefull, the model is outputing scores and not the probabilities
@@ -166,15 +182,16 @@ def test(model, loader, f_loss, device, final_test=False):
 #     loss = torch.mean((output - target)**2)
 #     return loss
 
-
 class CustomLoss():
     def __init__(self, num_cont):
         self.num_const =num_cont
 
-    def __call__(self, output, target, input):
-        output_cost =torch.tensor([output[i] * input[-self.num_const:][i] for i in range(self.num_const)])
-        target_cost =torch.tensor([target[i] * input[-self.num_const:][i] for i in range(self.num_const)] )
-
-        print(target_cost)
-        print(output_cost)
+    def __call__(self, output, target, inputs):
+        num_batch = output.shape[0]
+        # print(output.view(num_batch, 1 ,self.num_const))
+        # print(inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
+        output_cost = torch.bmm(output.view(num_batch, 1 ,self.num_const), inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
+        target_cost = torch.bmm(target.view(num_batch, 1 ,self.num_const), inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
+        # print(target_cost)
+        # print(output_cost)
         return torch.mean((output_cost - target_cost)**2)

@@ -19,12 +19,16 @@ def test_read(csv_file_name):
 
 def generate_csv(file_name, num_var, num_const, num_prob):
 
+
+    print("number of variables: ",args.num_var)
+    print("number of const: ",args.num_const)
+    print("number of problem: ",args.num_prob)
     dict_input = {"A": [], "B": [], "C": [], "Solution": []}
 
     for k in tqdm(range(num_prob)):
         C = []
         for i in range(num_var):
-            C.append(uniform(uniform(uniform(0, 1), uniform(0, 1))))
+            C.append(uniform(uniform(0, 1), uniform(0, 1)))
 
         A = []
         B = []
@@ -92,8 +96,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_var", type=int, default=5,
                         help="Number of variables (default: 5)")
-    parser.add_argument("--num_const", type=int, default=4,
-                        help="number of constrains (default: 4)")
+    parser.add_argument("--num_const", type=int, default=8,
+                        help="number of constrains (default: 8)")
     parser.add_argument("--num_prob", type=int, default=10,
                         help="number of problems to generate (default: 10)")
 
