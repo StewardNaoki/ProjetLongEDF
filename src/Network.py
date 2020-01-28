@@ -266,26 +266,52 @@ def test(model, loader, f_loss, device, final_test=False, custom_loss = False):
             correct += (predicted_targets == targets).sum().item()
 
             if final_test:
-                print("targets:\n", targets[0])
-                print("predicted targets:\n", outputs[0])
+                print_costs(outputs, targets, inputs)
+
+
+
+
 
     return tot_loss/N, correct/N
 
 
-# def custom_locc(output, target, input):
-#     loss = torch.mean((output - target)**2)
-#     return loss
+def print_costs(outputs, targets, inputs):
+        num_batch = outputs.shape[0]
+        num_const = outputs.shape[1]
+        output_cost = torch.bmm(outputs.view(num_batch, 1 ,num_const), inputs[:,-num_const:].view(num_batch, num_const, 1))
+        target_cost = torch.bmm(targets.view(num_batch, 1 ,num_const), inputs[:,-num_const:].view(num_batch, num_const, 1))
+        print("targets cost: ",target_cost[0])
+        print("outputs cost: ",output_cost[0])
+        print("targets: ", targets[0])
+        print("outputs: ", outputs[0])
+
 
 class CustomLoss():
-    def __init__(self, num_cont):
-        self.num_const =num_cont
+    def __init__(self, num_var):
+        self.num_var =num_var
 
-    def __call__(self, output, target, inputs):
-        num_batch = output.shape[0]
+    def __call__(self, outputs, targets, inputs):
+        num_batch = outputs.shape[0]
         # print(output.view(num_batch, 1 ,self.num_const))
         # print(inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
-        output_cost = torch.bmm(output.view(num_batch, 1 ,self.num_const), inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
-        target_cost = torch.bmm(target.view(num_batch, 1 ,self.num_const), inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
+        output_cost = torch.bmm(outputs.view(num_batch, 1 ,self.num_var), inputs[:,-self.num_var:].view(num_batch, self.num_var, 1))
+        target_cost = torch.bmm(targets.view(num_batch, 1 ,self.num_var), inputs[:,-self.num_var:].view(num_batch, self.num_var, 1))
         # print(target_cost)
         # print(output_cost)
         return torch.mean((output_cost - target_cost)**2)
+
+class CustomLoss2():
+    def __init__(self, num_var):
+        self.num_var =num_var
+
+    def __call__(self, outputs, targets, inputs):
+        num_batch = outputs.shape[0]
+        # print(output.view(num_batch, 1 ,self.num_const))
+        # print(inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
+        output_cost = torch.bmm(outputs.view(num_batch, 1 ,self.num_var), inputs[:,-self.num_var:].view(num_batch, self.num_var, 1))
+        target_cost = torch.bmm(targets.view(num_batch, 1 ,self.num_var), inputs[:,-self.num_var:].view(num_batch, self.num_var, 1))
+        # print(target_cost)
+        # print(output_cost)
+        return torch.mean((output_cost - target_cost)**2)
+
+

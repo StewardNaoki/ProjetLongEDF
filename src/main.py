@@ -36,10 +36,6 @@ MODEL_PATH = LOG_DIR + FC1 + BEST_MODELE
 METRICS = "metrics/"
 TENSORBOARD = "tensorboard/"
 DIEZ = "##########"
-tensorboard_writer   = SummaryWriter(log_dir = LOG_DIR+TENSORBOARD)
-
-
-
 
 
 # class Normalize(object):
@@ -59,9 +55,6 @@ tensorboard_writer   = SummaryWriter(log_dir = LOG_DIR+TENSORBOARD)
 #         # landmarks = landmarks.transpose((2, 0, 1))
 #         return {'X_image': sample['X_image'],
 #                 'Y': labels}
-
-
-
 
 
 class ModelCheckpoint:
@@ -96,9 +89,11 @@ def main():
                         help="proportion of test data (default: 0.2)")
     parser.add_argument("--num_threads", type=int, default=1,
                         help="number of thread used (default: 1)")
-    parser.add_argument("--create_csv", type=bool, default=False,
+    parser.add_argument("--create_csv", default=False, action='store_true',
                         help="create or not csv file (default: False)")
-    parser.add_argument("--l2_reg", type=int, default=0.001,
+    parser.add_argument("--log", default=False, action='store_true',
+                        help="Write log or not (default: False)")
+    parser.add_argument("--l2_reg", type=float, default=0.001,
                         help="L2 regularisation (default: 0.001)")
 
     parser.add_argument("--num_var", type=int, default=5,
@@ -107,9 +102,9 @@ def main():
                         help="number of constrains (default: 8)")
     parser.add_argument("--num_prob", type=int, default=10,
                         help="number of problems to generate (default: 10)")
-    parser.add_argument("--custom_loss", type=bool, default=False,
+    parser.add_argument("--custom_loss", default=False, action='store_true',
                         help="Use of custom loss (default: False)")
-    parser.add_argument("--num_deep_layer", type = int , default=1,
+    parser.add_argument("--num_deep_layer", type=int, default=1,
                         help="Number of deep layer used (default: 1)")
 
     args = parser.parse_args()
@@ -152,18 +147,22 @@ def main():
     #     print("input:\n",inputs)
     #     print("target:\n", targets)
 
-    print("number of variables: ",args.num_var)
-    print("number of const: ",args.num_const)
+    print("number of variables: ", args.num_var)
+    print("number of const: ", args.num_const)
     num_param = args.num_var + args.num_const + (args.num_var*args.num_const)
     print("Number of parameters: ", num_param)
     if args.num_deep_layer == 1:
-        model = nw.FullyConnectedRegularized1(l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+        model = nw.FullyConnectedRegularized1(
+            l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
     elif args.num_deep_layer == 2:
-        model = nw.FullyConnectedRegularized2(l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+        model = nw.FullyConnectedRegularized2(
+            l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
     elif args.num_deep_layer == 3:
-        model = nw.FullyConnectedRegularized3(l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+        model = nw.FullyConnectedRegularized3(
+            l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
     else:
-        assert(False), "Not number of correct deep layers: {}".format(args.num_deep_layer)
+        assert(False), "Not number of correct deep layers: {}".format(
+            args.num_deep_layer)
     print("Network architechture:\n", model)
 
     use_gpu = torch.cuda.is_available()
@@ -182,52 +181,75 @@ def main():
     else:
         print("MSE loss used")
         f_loss = nn.MSELoss()
-    
+
+
+
     optimizer = torch.optim.Adam(model.parameters())
+
 
     top_logdir = LOG_DIR + FC1
     if not os.path.exists(top_logdir):
         os.mkdir(top_logdir)
     model_checkpoint = ModelCheckpoint(top_logdir + BEST_MODELE, model)
 
-    log_file_path = lw.generate_unique_logpath(LOG_DIR, "Linear")
+    if args.log:
+        print("Writing log")
+        run_dir_path, num_run = lw.generate_unique_run_dir(LOG_DIR,"run")
+
+        tensorboard_writer = SummaryWriter(
+            log_dir=run_dir_path, filename_suffix=".log")
+
+        run_desc = "Reg{}Var{}Const{}CLoss{}Dlayer{}".format(
+            args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer)
+        log_file_path =  LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
+
+
+
+
     with tqdm(total=args.epoch) as pbar:
         for t in range(args.epoch):
             pbar.update(1)
             pbar.set_description("Epoch Number {}".format(t))
             # print("\n\n",DIEZ + "Epoch Number: {}".format(t) + DIEZ)
             train_loss, train_acc = nw.train(
-                model, train_loader, f_loss, optimizer, device, custom_loss= args.custom_loss)
+                model, train_loader, f_loss, optimizer, device, custom_loss=args.custom_loss)
 
             progress(train_loss, train_acc, description="Trainning")
             time.sleep(0.5)
             # print(args.custom_loss)
             val_loss, val_acc = nw.test(
-                model, test_loader, f_loss, device, custom_loss= args.custom_loss)
+                model, test_loader, f_loss, device, custom_loss=args.custom_loss)
 
             progress(val_loss, val_acc, description="Validation")
             # print("\n\n","Validation : Loss : {:.4f}, Acc : {:.4f}".format(
             #     val_loss, val_acc))
 
+
+
             model_checkpoint.update(val_loss)
 
-            lw.write_log(log_file_path, val_acc,
-                         val_loss, train_acc, train_loss)
+            if args.log:
 
-            tensorboard_writer.add_scalar(METRICS + 'train_loss', train_loss, t)
-            tensorboard_writer.add_scalar(METRICS + 'train_acc',  train_acc, t)
-            tensorboard_writer.add_scalar(METRICS + 'val_loss', val_loss, t)
-            tensorboard_writer.add_scalar(METRICS + 'val_acc',  val_acc, t)
+                tensorboard_writer.add_scalars('run', {'train_loss': train_loss,
+                                                    'val_loss': val_loss
+                                                    }, t)
+                lw.write_log(log_file_path, val_acc,
+                         val_loss, train_acc, train_loss)
+                # tensorboard_writer.add_scalar(METRICS + 'train_loss', train_loss, t)
+                # tensorboard_writer.add_scalar(METRICS + 'train_acc',  train_acc, t)
+                # tensorboard_writer.add_scalar(METRICS + 'val_loss', val_loss, t)
+                # tensorboard_writer.add_scalar(METRICS + 'val_acc',  val_acc, t)
 
     model.load_state_dict(torch.load(MODEL_PATH))
     print(DIEZ+" Final Test "+DIEZ)
 
     test_loss, test_acc = nw.test(
-        model, test_loader, f_loss, device, final_test=True, custom_loss= args.custom_loss)
+        model, test_loader, f_loss, device, final_test=True, custom_loss=args.custom_loss)
     print(" Test       : Loss : {:.4f}, Acc : {:.4f}".format(
         test_loss, test_acc))
 
-    # lw.create_acc_loss_graph(log_file_path)
+    if args.log:
+        tensorboard_writer.close()
 
 
 if __name__ == "__main__":

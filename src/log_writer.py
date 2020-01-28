@@ -7,6 +7,16 @@ style.use("ggplot")
 
 model_name = "model-1570490221" # grab whichever model name you want here. We could also just reference the MODEL_NAME if you're in a notebook still.
 
+def generate_unique_run_dir(logdir, raw_run_name):
+    i = 0
+    while(True):
+        run_name = raw_run_name + "_" + str(i)
+        run_folder = os.path.join(logdir, run_name)
+        if not os.path.isdir(run_folder):
+            print("New run folder: {}".format(run_folder))
+            return run_folder, i
+        i = i + 1
+
 def generate_unique_logpath(logdir, raw_run_name):
     i = 0
     while(True):

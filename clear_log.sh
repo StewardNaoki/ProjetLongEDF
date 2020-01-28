@@ -1,3 +1,2 @@
-rm ./log/*.log
-rm ./log/*.0
-rm ./log/tensorboard/*.0
+rm /home/steward/Workspace/Supelec/PFE/ProjetLongEDF/log/*.log
+rm -r /home/steward/Workspace/Supelec/PFE/ProjetLongEDF/log/run*
