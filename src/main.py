@@ -58,8 +58,17 @@ DIEZ = "##########"
 
 
 class ModelCheckpoint:
+    """
+    Model check class
+    """
 
     def __init__(self, filepath, model):
+        """Constructor
+        
+        Arguments:
+            filepath {string} -- file path of the best model and where to save it
+            model {pytorch model} -- model
+        """
         self.min_loss = None
         self.filepath = filepath
         self.model = model
@@ -80,6 +89,7 @@ def progress(loss, acc, description="Training"):
 
 def main():
 
+    #Parsing the inputs
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", type=int, default=1,
                         help="number of epoch (default: 1)")
@@ -109,30 +119,37 @@ def main():
 
     args = parser.parse_args()
 
+    #Recreate a new dataset csv if necessary
     if args.create_csv:
         g_csv.generate_csv(PATH_DATA + CSV_NAME, args.num_var,
                            args.num_const, args.num_prob)
-        #TODO
 
     valid_ratio = args.valpct  # Going to use 80%/20% split for train/valid
 
+    #Transformation of the dataset
     data_transforms = transforms.Compose([
-        ds.ToTensor()
+        ds.ToTensor()#transform to pytorch tensor
     ])
 
-    #TODO
+    #create a dataset object to facilitate streaming of data
     full_dataset = ds.LP_data(
         csv_file_name=PATH_DATA + CSV_NAME, transform=data_transforms)
 
+    #number of elements taken for training and testing
     nb_train = int((1.0 - valid_ratio) * len(full_dataset))
     # nb_test = int(valid_ratio * len(full_dataset))
     nb_test = len(full_dataset) - nb_train
+
+    #Print info
     print("Size of full data set: ", len(full_dataset))
     print("Size of training data: ", nb_train)
     print("Size of testing data: ", nb_test)
+
+    #Splitting of data
     train_dataset, test_dataset = torch.utils.data.dataset.random_split(
         full_dataset, [nb_train, nb_test])
 
+    #Create data loader
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.batch,
                               shuffle=True,
@@ -147,10 +164,15 @@ def main():
     #     print("input:\n",inputs)
     #     print("target:\n", targets)
 
+    #compute number of input parameters
+    num_param = args.num_var + args.num_const + (args.num_var*args.num_const)
+
+    #print info
     print("number of variables: ", args.num_var)
     print("number of const: ", args.num_const)
-    num_param = args.num_var + args.num_const + (args.num_var*args.num_const)
     print("Number of parameters: ", num_param)
+
+    #Different networks with different number of deep layers
     if args.num_deep_layer == 1:
         model = nw.FullyConnectedRegularized1(
             l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
@@ -163,6 +185,8 @@ def main():
     else:
         assert(False), "Not number of correct deep layers: {}".format(
             args.num_deep_layer)
+
+    #print model info
     print("Network architechture:\n", model)
 
     use_gpu = torch.cuda.is_available()
@@ -173,7 +197,8 @@ def main():
 
     model.to(device)
 
-    # f_loss = torch.nn.CrossEntropyLoss() #TODO
+    #Define loss
+    # f_loss = torch.nn.CrossEntropyLoss()
     if args.custom_loss:
         print("Custom loss used")
         f_loss = nw.CustomLoss()
@@ -183,22 +208,25 @@ def main():
         f_loss = nn.MSELoss()
 
 
-
+    #define optimizer
     optimizer = torch.optim.Adam(model.parameters())
 
-
+    #setup model checkpoint
     top_logdir = LOG_DIR + FC1
     if not os.path.exists(top_logdir):
         os.mkdir(top_logdir)
     model_checkpoint = ModelCheckpoint(top_logdir + BEST_MODELE, model)
 
+    #setup logging
     if args.log:
         print("Writing log")
+        #generate unique folder for new run
         run_dir_path, num_run = lw.generate_unique_run_dir(LOG_DIR,"run")
 
         tensorboard_writer = SummaryWriter(
             log_dir=run_dir_path, filename_suffix=".log")
 
+        #write short description of the run
         run_desc = "Reg{}Var{}Const{}CLoss{}Dlayer{}".format(
             args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer)
         log_file_path =  LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
@@ -211,26 +239,30 @@ def main():
             pbar.update(1)
             pbar.set_description("Epoch Number {}".format(t))
             # print("\n\n",DIEZ + "Epoch Number: {}".format(t) + DIEZ)
+
+            #train
             train_loss, train_acc = nw.train(
                 model, train_loader, f_loss, optimizer, device, custom_loss=args.custom_loss)
 
             progress(train_loss, train_acc, description="Trainning")
             time.sleep(0.5)
             # print(args.custom_loss)
+
+            #test
             val_loss, val_acc = nw.test(
                 model, test_loader, f_loss, device, custom_loss=args.custom_loss)
 
             progress(val_loss, val_acc, description="Validation")
             # print("\n\n","Validation : Loss : {:.4f}, Acc : {:.4f}".format(
             #     val_loss, val_acc))
-
-
-
+            
+            #check if model is best and save it if it is
             model_checkpoint.update(val_loss)
 
             if args.log:
 
-                tensorboard_writer.add_scalars('run', {'train_loss': train_loss,
+                #Write tensorboard and log
+                tensorboard_writer.add_scalars('Loss evolution', {'train_loss': train_loss,
                                                     'val_loss': val_loss
                                                     }, t)
                 lw.write_log(log_file_path, val_acc,

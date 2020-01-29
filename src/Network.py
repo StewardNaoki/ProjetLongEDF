@@ -13,15 +13,8 @@ class FullyConnectedRegularized1(nn.Module):
         self.l2_reg = l2_reg
         self.num_param = num_param
 
-        # fully connected layer, output 10 classes
         self.fcIn = nn.Linear(num_param, 100)
-        # fully connected layer, output 10 classes
         self.fc1 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
-        # self.fc2 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
-        # self.fc3 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
         self.fcOut = nn.Linear(100, num_var)
 
         self.Layers = nn.Sequential(
@@ -32,25 +25,18 @@ class FullyConnectedRegularized1(nn.Module):
             nn.Dropout(0.5),
             self.fc1,
             nn.ReLU(),
-            # self.fc2,
-            # nn.ReLU(),
-            # self.fc3,
-            # nn.ReLU(),
             self.fcOut
         )
 
     def penalty(self):
-        # return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fcFinal.weight.norm(2))
+        #L2 regularisation
         return self.l2_reg * (self.fc1.weight.norm(2) + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
+        #Forward pass
         assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
             self.num_param, x.shape[1])
-        # x = x.view(x.size(0), -1)
-        # print("num_param =", self.num_param)
-        # print("true num_param =", x.shape)
         output = self.Layers(x)
-        # return output, x    # return x for visualization
         return output
 
 
@@ -61,15 +47,9 @@ class FullyConnectedRegularized2(nn.Module):
         self.l2_reg = l2_reg
         self.num_param = num_param
 
-        # fully connected layer, output 10 classes
         self.fcIn = nn.Linear(num_param, 100)
-        # fully connected layer, output 10 classes
         self.fc1 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
         self.fc2 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
-        # self.fc3 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
         self.fcOut = nn.Linear(100, num_var)
 
         self.Layers = nn.Sequential(
@@ -82,23 +62,18 @@ class FullyConnectedRegularized2(nn.Module):
             nn.ReLU(),
             self.fc2,
             nn.ReLU(),
-            # self.fc3,
-            # nn.ReLU(),
             self.fcOut
         )
 
     def penalty(self):
+        #L2 regularisation
         return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fcFinal.weight.norm(2))
-        # return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
+        #Forward pass
         assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
             self.num_param, x.shape[1])
-        # x = x.view(x.size(0), -1)
-        # print("num_param =", self.num_param)
-        # print("true num_param =", x.shape)
         output = self.Layers(x)
-        # return output, x    # return x for visualization
         return output
 
 
@@ -109,15 +84,10 @@ class FullyConnectedRegularized3(nn.Module):
         self.l2_reg = l2_reg
         self.num_param = num_param
 
-        # fully connected layer, output 10 classes
         self.fcIn = nn.Linear(num_param, 100)
-        # fully connected layer, output 10 classes
         self.fc1 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
         self.fc2 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
         self.fc3 = nn.Linear(100, 100)
-        # fully connected layer, output 10 classes
         self.fcOut = nn.Linear(100, num_var)
 
         self.Layers = nn.Sequential(
@@ -136,23 +106,19 @@ class FullyConnectedRegularized3(nn.Module):
         )
 
     def penalty(self):
+        #L2 regularisation
         return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fc3.weight.norm(2) + self.fcFinal.weight.norm(2))
-        # return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
+        #Forward pass
         assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
             self.num_param, x.shape[1])
-        # x = x.view(x.size(0), -1)
-        # print("num_param =", self.num_param)
-        # print("true num_param =", x.shape)
         output = self.Layers(x)
-        # return output, x    # return x for visualization
         return output
 
 
 def train(model, loader, f_loss, optimizer, device, custom_loss=False):
-    """
-    Train a model for one epoch, iterating over the loader
+    """Train a model for one epoch, iterating over the loader
     using the f_loss to compute the loss and the optimizer
     to update the parameters of the model.
 
@@ -165,8 +131,13 @@ def train(model, loader, f_loss, optimizer, device, custom_loss=False):
         device    -- a torch.device class specifying the device
                      used for computation
 
-    Returns :
+    Keyword Arguments:
+        custom_loss boolean -- test if custom loss is used (default: {False})
+
+    Returns:
+
     """
+
 
     # We enter train mode. This is useless for the linear model
     # but is important for layers such as dropout, batchnorm, ...
@@ -177,26 +148,27 @@ def train(model, loader, f_loss, optimizer, device, custom_loss=False):
     for i, (inputs, targets) in enumerate(loader):
         # pbar.update(1)
         # pbar.set_description("Training step {}".format(i))
-        # print("****", inputs.shape)
+        
         inputs, targets = inputs.to(device), targets.to(device)
-        # print("***",inputs.shape)
+        
 
         # Compute the forward pass through the network up to the loss
         outputs = model(inputs)
 
+        #get loss
         if(custom_loss):
             loss = f_loss(outputs, targets, inputs)
             # print("loss ", loss)
             tot_loss += inputs.shape[0] * \
                 f_loss(outputs, targets, inputs).item()
         else:
-
             loss = f_loss(outputs, targets)
             # print("loss ", loss)
             tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
 
         N += inputs.shape[0]
 
+        #test if loss has a defined gradient
         assert(loss.requires_grad), "No gradient for loss"
 
         # print("Output: ", outputs)
@@ -207,15 +179,15 @@ def train(model, loader, f_loss, optimizer, device, custom_loss=False):
         optimizer.zero_grad()
         # model.zero_grad()
         loss.backward()
-        # model.penalty().backward()
+        model.penalty().backward()
         optimizer.step()
+
     return tot_loss/N, correct/N
 
 
 def test(model, loader, f_loss, device, final_test=False, custom_loss=False):
-    """
-    Test a model by iterating over the loader
-
+    """Test a model by iterating over the loader
+    
     Arguments :
 
         model     -- A torch.nn.Module object
@@ -223,11 +195,15 @@ def test(model, loader, f_loss, device, final_test=False, custom_loss=False):
         f_loss    -- The loss function, i.e. a loss Module
         device    -- The device to use for computation
 
-    Returns :
-
+    
+    Keyword Arguments:
+        final_test boolean -- test if this is the final test: the function will show some result (default: {False})
+        custom_loss boolean -- test if custom loss is used (default: {False})
+    
+    Returns:
         A tuple with the mean loss and mean accuracy
+    """    
 
-    """
     # We disable gradient computation which speeds up the computation
     # and reduces the memory usage
     with torch.no_grad():
@@ -276,6 +252,13 @@ def test(model, loader, f_loss, device, final_test=False, custom_loss=False):
 
 
 def print_costs(outputs, targets, inputs):
+        """Function that print the cost of a given output and target
+        
+        Arguments:
+            outputs {torch tensor} -- output of the model
+            targets {torch tensor} -- target 
+            inputs {torch tensor} -- constraints of the problem
+        """    
         num_batch = outputs.shape[0]
         num_var = outputs.shape[1]
         output_cost = torch.bmm(outputs.view(
@@ -289,8 +272,6 @@ def print_costs(outputs, targets, inputs):
 
 
 class CustomLoss():
-    # def __init__(self):
-    #     # self.num_const =num_const
 
     def __call__(self, outputs, targets, inputs):
         num_batch = outputs.shape[0]
