@@ -116,6 +116,8 @@ def main():
                         help="Use of custom loss (default: False)")
     parser.add_argument("--num_deep_layer", type=int, default=1,
                         help="Number of deep layer used (default: 1)")
+    parser.add_argument("--alpha", type=float, default=0.0,
+                        help="constraint penalty (default: 0.0)")
 
     args = parser.parse_args()
 
@@ -175,19 +177,21 @@ def main():
     #Different networks with different number of deep layers
     if args.num_deep_layer == 1:
         model = nw.FullyConnectedRegularized1(
-            l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+            num_param=num_param, num_var=args.num_var)
     elif args.num_deep_layer == 2:
         model = nw.FullyConnectedRegularized2(
-            l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+            num_param=num_param, num_var=args.num_var)
     elif args.num_deep_layer == 3:
         model = nw.FullyConnectedRegularized3(
-            l2_reg=args.l2_reg, num_param=num_param, num_var=args.num_var)
+            num_param=num_param, num_var=args.num_var)
     else:
         assert(False), "Not number of correct deep layers: {}".format(
             args.num_deep_layer)
 
     #print model info
     print("Network architechture:\n", model)
+    for name, param in model.named_parameters():
+        print("name of parameters ",name)
 
     use_gpu = torch.cuda.is_available()
     if use_gpu:
@@ -200,8 +204,8 @@ def main():
     #Define loss
     # f_loss = torch.nn.CrossEntropyLoss()
     if args.custom_loss:
-        print("Custom loss used")
-        f_loss = nw.CustomLoss()
+        print("Custom loss used with alpha: {}".format(args.alpha))
+        f_loss = nw.CustomLoss(num_const= args.num_const, alpha= args.alpha)
         # f_loss = nw.CustomLoss2(args.num_const)
     else:
         print("MSE loss used")
@@ -209,7 +213,7 @@ def main():
 
 
     #define optimizer
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters(), weight_decay= args.l2_reg)
 
     #setup model checkpoint
     top_logdir = LOG_DIR + FC1

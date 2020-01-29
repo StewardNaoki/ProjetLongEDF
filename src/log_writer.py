@@ -54,9 +54,6 @@ def create_acc_loss_graph(log_file_path):
             list_train_acc.append(float(train_acc))
             list_train_loss.append(float(train_loss))
 
-            
-
-
     fig = plt.figure()
 
     ax1 = plt.subplot2grid((2,1), (0,0))
