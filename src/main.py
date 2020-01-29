@@ -176,8 +176,8 @@ def main():
     # f_loss = torch.nn.CrossEntropyLoss() #TODO
     if args.custom_loss:
         print("Custom loss used")
-        f_loss = nw.CustomLoss(args.num_var)
-        # f_loss = nw.MyLoss()
+        f_loss = nw.CustomLoss()
+        # f_loss = nw.CustomLoss2(args.num_const)
     else:
         print("MSE loss used")
         f_loss = nn.MSELoss()
@@ -245,7 +245,7 @@ def main():
 
     test_loss, test_acc = nw.test(
         model, test_loader, f_loss, device, final_test=True, custom_loss=args.custom_loss)
-    print(" Test       : Loss : {:.4f}, Acc : {:.4f}".format(
+    print("Test       : Loss : {:.4f}, Acc : {:.4f}".format(
         test_loss, test_acc))
 
     if args.log:

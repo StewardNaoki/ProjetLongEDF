@@ -41,10 +41,11 @@ class FullyConnectedRegularized1(nn.Module):
 
     def penalty(self):
         # return self.l2_reg * (self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fcFinal.weight.norm(2))
-        return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
+        return self.l2_reg * (self.fc1.weight.norm(2) + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
-        assert (x.shape[1] == self.num_param),"Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(self.num_param, x.shape[1])
+        assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
+            self.num_param, x.shape[1])
         # x = x.view(x.size(0), -1)
         # print("num_param =", self.num_param)
         # print("true num_param =", x.shape)
@@ -91,7 +92,8 @@ class FullyConnectedRegularized2(nn.Module):
         # return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
-        assert (x.shape[1] == self.num_param),"Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(self.num_param, x.shape[1])
+        assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
+            self.num_param, x.shape[1])
         # x = x.view(x.size(0), -1)
         # print("num_param =", self.num_param)
         # print("true num_param =", x.shape)
@@ -138,7 +140,8 @@ class FullyConnectedRegularized3(nn.Module):
         # return self.l2_reg * (self.fc1.weight.norm(2)  + self.fcFinal.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
-        assert (x.shape[1] == self.num_param),"Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(self.num_param, x.shape[1])
+        assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
+            self.num_param, x.shape[1])
         # x = x.view(x.size(0), -1)
         # print("num_param =", self.num_param)
         # print("true num_param =", x.shape)
@@ -147,7 +150,7 @@ class FullyConnectedRegularized3(nn.Module):
         return output
 
 
-def train(model, loader, f_loss, optimizer, device, custom_loss = False):
+def train(model, loader, f_loss, optimizer, device, custom_loss=False):
     """
     Train a model for one epoch, iterating over the loader
     using the f_loss to compute the loss and the optimizer
@@ -184,7 +187,8 @@ def train(model, loader, f_loss, optimizer, device, custom_loss = False):
         if(custom_loss):
             loss = f_loss(outputs, targets, inputs)
             # print("loss ", loss)
-            tot_loss += inputs.shape[0] * f_loss(outputs, targets, inputs).item()
+            tot_loss += inputs.shape[0] * \
+                f_loss(outputs, targets, inputs).item()
         else:
 
             loss = f_loss(outputs, targets)
@@ -208,7 +212,7 @@ def train(model, loader, f_loss, optimizer, device, custom_loss = False):
     return tot_loss/N, correct/N
 
 
-def test(model, loader, f_loss, device, final_test=False, custom_loss = False):
+def test(model, loader, f_loss, device, final_test=False, custom_loss=False):
     """
     Test a model by iterating over the loader
 
@@ -252,9 +256,9 @@ def test(model, loader, f_loss, device, final_test=False, custom_loss = False):
             # The multipliation by inputs.shape[0] is due to the fact
             # that our loss criterion is averaging over its samples
 
-
             if(custom_loss):
-                tot_loss += inputs.shape[0] * f_loss(outputs, targets, inputs).item()
+                tot_loss += inputs.shape[0] * \
+                    f_loss(outputs, targets, inputs).item()
             else:
                 tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
 
@@ -268,50 +272,82 @@ def test(model, loader, f_loss, device, final_test=False, custom_loss = False):
             if final_test:
                 print_costs(outputs, targets, inputs)
 
-
-
-
-
     return tot_loss/N, correct/N
 
 
 def print_costs(outputs, targets, inputs):
         num_batch = outputs.shape[0]
-        num_const = outputs.shape[1]
-        output_cost = torch.bmm(outputs.view(num_batch, 1 ,num_const), inputs[:,-num_const:].view(num_batch, num_const, 1))
-        target_cost = torch.bmm(targets.view(num_batch, 1 ,num_const), inputs[:,-num_const:].view(num_batch, num_const, 1))
-        print("targets cost: ",target_cost[0])
-        print("outputs cost: ",output_cost[0])
+        num_var = outputs.shape[1]
+        output_cost = torch.bmm(outputs.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+        target_cost = torch.bmm(targets.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+        print("targets cost: ", target_cost[0])
+        print("outputs cost: ", output_cost[0])
         print("targets: ", targets[0])
         print("outputs: ", outputs[0])
 
 
 class CustomLoss():
-    def __init__(self, num_var):
-        self.num_var =num_var
+    # def __init__(self):
+    #     # self.num_const =num_const
 
     def __call__(self, outputs, targets, inputs):
         num_batch = outputs.shape[0]
+        num_var = outputs.shape[1]
         # print(output.view(num_batch, 1 ,self.num_const))
         # print(inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
-        output_cost = torch.bmm(outputs.view(num_batch, 1 ,self.num_var), inputs[:,-self.num_var:].view(num_batch, self.num_var, 1))
-        target_cost = torch.bmm(targets.view(num_batch, 1 ,self.num_var), inputs[:,-self.num_var:].view(num_batch, self.num_var, 1))
+        output_cost = torch.bmm(outputs.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+        target_cost = torch.bmm(targets.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
         # print(target_cost)
         # print(output_cost)
         return torch.mean((output_cost - target_cost)**2)
+
 
 class CustomLoss2():
-    def __init__(self, num_var):
-        self.num_var =num_var
+    def __init__(self, num_const):
+        self.num_const = num_const
 
     def __call__(self, outputs, targets, inputs):
+        # print(outputs.shape)
+        # print(targets.shape)
+        # print(inputs.shape)
         num_batch = outputs.shape[0]
+        num_var = outputs.shape[1]
+        # print(num_batch)
+        # print("print costs")
         # print(output.view(num_batch, 1 ,self.num_const))
         # print(inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
-        output_cost = torch.bmm(outputs.view(num_batch, 1 ,self.num_var), inputs[:,-self.num_var:].view(num_batch, self.num_var, 1))
-        target_cost = torch.bmm(targets.view(num_batch, 1 ,self.num_var), inputs[:,-self.num_var:].view(num_batch, self.num_var, 1))
-        # print(target_cost)
-        # print(output_cost)
-        return torch.mean((output_cost - target_cost)**2)
+        a_const = inputs[:, :-self.num_const -
+                         num_var].view(num_batch, self.num_const, num_var).transpose(2, 1)
+        b_const = inputs[:, -self.num_const-num_var:-num_var].view(num_batch, 1, -1)
+        # print("print consts")
+        # print(a_const)
+        # print(b_const)
+        outputs_reg = (torch.clamp((torch.bmm(outputs.view(
+            num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+        targets_reg = (torch.clamp((torch.bmm(targets.view(
+            num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+        # print(torch.clamp((torch.bmm(outputs.view(num_batch, 1 ,self.num_var), a_const) - b_const) , min= 0))
+        # print("print reg")
+        # print(outputs_reg)
+        # print(targets_reg)
 
+        outputs_cost = torch.bmm(outputs.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+        targets_cost = torch.bmm(targets.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
 
+        # print("costs ",outputs_cost)
+        # print("costs ",targets_cost)
+
+        # print(outputs_cost.shape)
+        # print(outputs_reg.shape)
+        outputs_cost += outputs_reg.view(num_batch, 1, -1)
+        targets_cost += targets_reg.view(num_batch, 1, -1)
+        # print("total ",outputs_cost)
+        # print("total ",targets_cost)
+
+        return torch.mean((outputs_cost - targets_cost)**2)
