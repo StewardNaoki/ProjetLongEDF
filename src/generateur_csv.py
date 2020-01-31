@@ -6,6 +6,7 @@ from tqdm import tqdm
 import numpy as np
 import argparse
 
+PATH_DATA = "./../DATA/"
 
 def test_read(csv_file_name):
     data_frame = pd.read_csv(csv_file_name)
@@ -19,7 +20,7 @@ def test_read(csv_file_name):
 
 def generate_csv(file_name, num_var, num_const, num_prob):
 
-
+    print("Writing in: ", file_name)
     print("number of variables: ",num_var)
     print("number of const: ",num_const)
     print("number of problem: ",num_prob)
@@ -48,7 +49,7 @@ def generate_csv(file_name, num_var, num_const, num_prob):
         dict_input["B"].append(B)
         dict_input["C"].append(C)
 
-        prob = LpProblem("TheCEIProblem", LpMinimize)
+        prob = LpProblem("TheProblem", LpMinimize)
 
         prob_var = [LpVariable("Var{}".format(i), 0)for i in range(num_var)]
         # prob_var = LpVariable.dicts("Vars",list_var,0)
@@ -94,6 +95,8 @@ def generate_csv(file_name, num_var, num_const, num_prob):
 def main():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--file_name", type=str, default="input",
+                        help="file name")
     parser.add_argument("--num_var", type=int, default=5,
                         help="Number of variables (default: 5)")
     parser.add_argument("--num_const", type=int, default=8,
@@ -103,7 +106,9 @@ def main():
 
     args = parser.parse_args()
 
-    generate_csv('./../DATA/input.csv', args.num_var,
+    file_path = PATH_DATA + "inputV{}C{}P{}".format(args.num_var, args.num_const, args.num_prob) + ".csv"
+
+    generate_csv(file_path, args.num_var,
                  args.num_const, args.num_prob)
 
 

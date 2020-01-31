@@ -25,7 +25,7 @@ import Network as nw
 # set to true to one once, then back to false unless you want to change something in your training data.
 CREATE_CSV = True
 PATH_DATA = "./../DATA/"
-CSV_NAME = "input.csv"
+# CSV_NAME = "input.csv"
 LOG_DIR = "./../log/"
 FC1 = "fc1/"
 BEST_MODELE = "best_model.pt"
@@ -37,6 +37,9 @@ METRICS = "metrics/"
 TENSORBOARD = "tensorboard/"
 DIEZ = "##########"
 
+
+#TODO: Add Scheduler
+#TODO: Normalize input
 
 # class Normalize(object):
 
@@ -122,8 +125,10 @@ def main():
     args = parser.parse_args()
 
     #Recreate a new dataset csv if necessary
+
+    file_path = PATH_DATA + "inputV{}C{}P{}".format(args.num_var, args.num_const, args.num_prob) + ".csv"
     if args.create_csv:
-        g_csv.generate_csv(PATH_DATA + CSV_NAME, args.num_var,
+        g_csv.generate_csv(file_path, args.num_var,
                            args.num_const, args.num_prob)
 
     valid_ratio = args.valpct  # Going to use 80%/20% split for train/valid
@@ -135,7 +140,7 @@ def main():
 
     #create a dataset object to facilitate streaming of data
     full_dataset = ds.LP_data(
-        csv_file_name=PATH_DATA + CSV_NAME, transform=data_transforms)
+        csv_file_name=file_path, transform=data_transforms)
 
     #number of elements taken for training and testing
     nb_train = int((1.0 - valid_ratio) * len(full_dataset))
@@ -175,7 +180,10 @@ def main():
     print("Number of parameters: ", num_param)
 
     #Different networks with different number of deep layers
-    if args.num_deep_layer == 1:
+    if args.num_deep_layer == 0:
+        model = nw.FullyConnectedRegularized0(
+            num_param=num_param, num_var=args.num_var)
+    elif args.num_deep_layer == 1:
         model = nw.FullyConnectedRegularized1(
             num_param=num_param, num_var=args.num_var)
     elif args.num_deep_layer == 2:
@@ -190,8 +198,8 @@ def main():
 
     #print model info
     print("Network architechture:\n", model)
-    for name, param in model.named_parameters():
-        print("name of parameters ",name)
+    # for name, param in model.named_parameters():
+    #     print("name of parameters ",name)
 
     use_gpu = torch.cuda.is_available()
     if use_gpu:
@@ -231,8 +239,8 @@ def main():
             log_dir=run_dir_path, filename_suffix=".log")
 
         #write short description of the run
-        run_desc = "Reg{}Var{}Const{}CLoss{}Dlayer{}".format(
-            args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer)
+        run_desc = "Epoch{}Reg{}Var{}Const{}CLoss{}Dlayer{}Alpha{}".format(
+            args.num_epoch, args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer, args.alpha)
         log_file_path =  LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
 
 

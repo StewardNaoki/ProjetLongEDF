@@ -6,6 +6,29 @@ from torchvision import transforms
 import time
 
 
+class FullyConnectedRegularized0(nn.Module):
+    def __init__(self, num_param, num_var, l2_reg = 0):
+        super(FullyConnectedRegularized0, self).__init__()
+
+        self.l2_reg = l2_reg
+        self.num_param = num_param
+
+        self.fcIn = nn.Linear(num_param, 100)
+        self.fcOut = nn.Linear(100, num_var)
+
+        self.Layers = nn.Sequential(
+            self.fcIn,
+            nn.ReLU(),
+            self.fcOut
+        )
+
+    def forward(self, x):
+        #Forward pass
+        assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
+            self.num_param, x.shape[1])
+        output = self.Layers(x)
+        return output
+
 class FullyConnectedRegularized1(nn.Module):
     def __init__(self, num_param, num_var, l2_reg = 0):
         super(FullyConnectedRegularized1, self).__init__()
@@ -28,9 +51,9 @@ class FullyConnectedRegularized1(nn.Module):
             self.fcOut
         )
 
-    def penalty(self):
-        #L2 regularisation
-        return self.l2_reg * (self.fc1.weight.norm(2) + self.fcOut.weight.norm(2) + self.fcIn.weight.norm(2))
+    # def penalty(self):
+    #     #L2 regularisation
+    #     return self.l2_reg * (self.fc1.weight.norm(2) + self.fcOut.weight.norm(2) + self.fcIn.weight.norm(2))
 
     def forward(self, x):
         #Forward pass
@@ -303,6 +326,11 @@ class CustomLoss():
                 num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
 
             result += self.alpha * torch.mean((outputs_penalty - target_penalty)**2)
+
+
+            # negative_penalty = -1*torch.clamp(outputs,max = 0)
+
+            # result += self.alpha *torch.mean(negative_penalty**2)
 
         return result
 
