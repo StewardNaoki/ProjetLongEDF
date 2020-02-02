@@ -6,21 +6,26 @@ from torchvision import transforms
 import time
 
 
-class FullyConnectedRegularized0(nn.Module):
-    def __init__(self, num_param, num_var, l2_reg=0):
-        super(FullyConnectedRegularized0, self).__init__()
+class FullyConnectedRegularized(nn.Module):
+    def __init__(self, num_param, num_var, l2_reg=0, num_depth = 0):
+        super(FullyConnectedRegularized, self).__init__()
 
         self.l2_reg = l2_reg
         self.num_param = num_param
 
-        self.fcIn = nn.Linear(num_param, 100)
-        self.fcOut = nn.Linear(100, num_var)
+        self.layer_list = []
+        fcIn = nn.Linear(num_param, 100)
+        fcOut = nn.Linear(100, num_var)
 
-        self.Layers = nn.Sequential(
-            self.fcIn,
-            nn.ReLU(),
-            self.fcOut
-        )
+        self.layer_list.append(fcIn)
+
+        for depth in range(num_depth):
+            self.layer_list.append(nn.Linear(100, 100))
+
+        self.layer_list.append(fcOut)
+
+
+        self.Layers = nn.Sequential( *self.layer_list)
 
     def forward(self, x):
         #Forward pass
@@ -29,116 +34,6 @@ class FullyConnectedRegularized0(nn.Module):
         output = self.Layers(x)
         return output
 
-
-class FullyConnectedRegularized1(nn.Module):
-    def __init__(self, num_param, num_var, l2_reg=0):
-        super(FullyConnectedRegularized1, self).__init__()
-
-        self.l2_reg = l2_reg
-        self.num_param = num_param
-
-        self.fcIn = nn.Linear(num_param, 100)
-        self.fc1 = nn.Linear(100, 100)
-        self.fcOut = nn.Linear(100, num_var)
-
-        self.Layers = nn.Sequential(
-
-            nn.Dropout(0.2),
-            self.fcIn,
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            self.fc1,
-            nn.ReLU(),
-            self.fcOut
-        )
-
-    # def penalty(self):
-    #     #L2 regularisation
-    #     return self.l2_reg * (self.fc1.weight.norm(2) + self.fcOut.weight.norm(2) + self.fcIn.weight.norm(2))
-
-    def forward(self, x):
-        #Forward pass
-        assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
-            self.num_param, x.shape[1])
-        output = self.Layers(x)
-        return output
-
-
-class FullyConnectedRegularized2(nn.Module):
-    def __init__(self, num_param, num_var, l2_reg=0):
-        super(FullyConnectedRegularized2, self).__init__()
-
-        self.l2_reg = l2_reg
-        self.num_param = num_param
-
-        self.fcIn = nn.Linear(num_param, 100)
-        self.fc1 = nn.Linear(100, 100)
-        self.fc2 = nn.Linear(100, 100)
-        self.fcOut = nn.Linear(100, num_var)
-
-        self.Layers = nn.Sequential(
-
-            nn.Dropout(0.2),
-            self.fcIn,
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            self.fc1,
-            nn.ReLU(),
-            self.fc2,
-            nn.ReLU(),
-            self.fcOut
-        )
-
-    def penalty(self):
-        #L2 regularisation
-        return self.l2_reg * (self.fcIn.weight.norm(2) + self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fcOut.weight.norm(2))
-
-    def forward(self, x):
-        #Forward pass
-        assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
-            self.num_param, x.shape[1])
-        output = self.Layers(x)
-        return output
-
-
-class FullyConnectedRegularized3(nn.Module):
-    def __init__(self, num_param, num_var, l2_reg=0):
-        super(FullyConnectedRegularized3, self).__init__()
-
-        self.l2_reg = l2_reg
-        self.num_param = num_param
-
-        self.fcIn = nn.Linear(num_param, 100)
-        self.fc1 = nn.Linear(100, 100)
-        self.fc2 = nn.Linear(100, 100)
-        self.fc3 = nn.Linear(100, 100)
-        self.fcOut = nn.Linear(100, num_var)
-
-        self.Layers = nn.Sequential(
-
-            nn.Dropout(0.2),
-            self.fcIn,
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            self.fc1,
-            nn.ReLU(),
-            self.fc2,
-            nn.ReLU(),
-            self.fc3,
-            nn.ReLU(),
-            self.fcOut
-        )
-
-    def penalty(self):
-        #L2 regularisation
-        return self.l2_reg * (self.fcIn.weight.norm(2) + self.fc1.weight.norm(2) + self.fc2.weight.norm(2) + self.fc3.weight.norm(2) + self.fcOut.weight.norm(2))
-
-    def forward(self, x):
-        #Forward pass
-        assert (x.shape[1] == self.num_param), "Wrong number of parameters\nnumber of parameters: {}\nsize of input: {}".format(
-            self.num_param, x.shape[1])
-        output = self.Layers(x)
-        return output
 
 
 def train(model, loader, f_loss, optimizer, device, custom_loss=False):

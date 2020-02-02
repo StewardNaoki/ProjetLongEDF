@@ -184,21 +184,29 @@ def main():
     print("Number of parameters: ", num_param)
 
     #Different networks with different number of deep layers
-    if args.num_deep_layer == 0:
-        model = nw.FullyConnectedRegularized0(
-            num_param=num_param, num_var=args.num_var)
-    elif args.num_deep_layer == 1:
-        model = nw.FullyConnectedRegularized1(
-            num_param=num_param, num_var=args.num_var)
-    elif args.num_deep_layer == 2:
-        model = nw.FullyConnectedRegularized2(
-            num_param=num_param, num_var=args.num_var)
-    elif args.num_deep_layer == 3:
-        model = nw.FullyConnectedRegularized3(
-            num_param=num_param, num_var=args.num_var)
-    else:
+    # if args.num_deep_layer == 0:
+    #     model = nw.FullyConnectedRegularized0(
+    #         num_param=num_param, num_var=args.num_var)
+    # elif args.num_deep_layer == 1:
+    #     model = nw.FullyConnectedRegularized1(
+    #         num_param=num_param, num_var=args.num_var)
+    # elif args.num_deep_layer == 2:
+    #     model = nw.FullyConnectedRegularized2(
+    #         num_param=num_param, num_var=args.num_var)
+    # elif args.num_deep_layer == 3:
+    #     model = nw.FullyConnectedRegularized3(
+    #         num_param=num_param, num_var=args.num_var)
+    # else:
+    #     assert(False), "Not number of correct deep layers: {}".format(
+    #         args.num_deep_layer)
+
+    if args.num_deep_layer < 0:
         assert(False), "Not number of correct deep layers: {}".format(
-            args.num_deep_layer)
+        args.num_deep_layer)
+    else:
+        print("Model with {} layers".format(args.num_deep_layer))
+        model = nw.FullyConnectedRegularized(num_param=num_param, num_var=args.num_var, num_depth= args.num_deep_layer)
+
 
     #print model info
     print("Network architechture:\n", model)
