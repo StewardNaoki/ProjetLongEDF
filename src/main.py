@@ -67,7 +67,7 @@ class ModelCheckpoint:
 
     def __init__(self, filepath, model):
         """Constructor
-        
+
         Arguments:
             filepath {string} -- file path of the best model and where to save it
             model {pytorch model} -- model
@@ -78,10 +78,12 @@ class ModelCheckpoint:
 
     def update(self, loss):
         if (self.min_loss is None) or (loss < self.min_loss):
-            print("Saving a better model to ", self.filepath)
+            print(DIEZ + " Saving a better model to {} ".format(self.filepath)+DIEZ)
             torch.save(self.model.state_dict(), self.filepath)
             #torch.save(self.model, self.filepath)
             self.min_loss = loss
+            return True
+        return False
 
 
 def progress(loss, acc, description="Training"):
@@ -126,7 +128,9 @@ def main():
 
     #Recreate a new dataset csv if necessary
 
-    file_path = PATH_DATA + "inputV{}C{}P{}".format(args.num_var, args.num_const, args.num_prob) + ".csv"
+    file_path = PATH_DATA + \
+        "inputV{}C{}P{}".format(
+            args.num_var, args.num_const, args.num_prob) + ".csv"
     if args.create_csv:
         g_csv.generate_csv(file_path, args.num_var,
                            args.num_const, args.num_prob)
@@ -135,7 +139,7 @@ def main():
 
     #Transformation of the dataset
     data_transforms = transforms.Compose([
-        ds.ToTensor()#transform to pytorch tensor
+        ds.ToTensor()  # transform to pytorch tensor
     ])
 
     #create a dataset object to facilitate streaming of data
@@ -213,15 +217,17 @@ def main():
     # f_loss = torch.nn.CrossEntropyLoss()
     if args.custom_loss:
         print("Custom loss used with alpha: {}".format(args.alpha))
-        f_loss = nw.CustomLoss(num_const= args.num_const, alpha= args.alpha)
+        loss_name = "CustomLoss/"
+        f_loss = nw.CustomLoss(num_const=args.num_const, alpha=args.alpha)
         # f_loss = nw.CustomLoss2(args.num_const)
     else:
         print("MSE loss used")
+        loss_name = "MSELoss/"
         f_loss = nn.MSELoss()
-
+        f_loss = nw.CustomMSELoss(num_const=args.num_const)
 
     #define optimizer
-    optimizer = torch.optim.Adam(model.parameters(), weight_decay= args.l2_reg)
+    optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
 
     #setup model checkpoint
     top_logdir = LOG_DIR + FC1
@@ -233,18 +239,17 @@ def main():
     if args.log:
         print("Writing log")
         #generate unique folder for new run
-        run_dir_path, num_run = lw.generate_unique_run_dir(LOG_DIR,"run")
+        run_dir_path, num_run = lw.generate_unique_run_dir(LOG_DIR, "run")
 
         tensorboard_writer = SummaryWriter(
             log_dir=run_dir_path, filename_suffix=".log")
 
         #write short description of the run
         run_desc = "Epoch{}Reg{}Var{}Const{}CLoss{}Dlayer{}Alpha{}".format(
-            args.num_epoch, args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer, args.alpha)
-        log_file_path =  LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
+            args.epoch, args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer, args.alpha)
+        log_file_path = LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
 
-
-
+    last_update = 0
 
     with tqdm(total=args.epoch) as pbar:
         for t in range(args.epoch):
@@ -253,7 +258,7 @@ def main():
             # print("\n\n",DIEZ + "Epoch Number: {}".format(t) + DIEZ)
 
             #train
-            train_loss, train_acc = nw.train(
+            train_loss, train_acc, train_cost, train_penalty = nw.train(
                 model, train_loader, f_loss, optimizer, device, custom_loss=args.custom_loss)
 
             progress(train_loss, train_acc, description="Trainning")
@@ -261,24 +266,38 @@ def main():
             # print(args.custom_loss)
 
             #test
-            val_loss, val_acc = nw.test(
+            val_loss, val_acc, val_cost, val_penalty = nw.test(
                 model, test_loader, f_loss, device, custom_loss=args.custom_loss)
 
             progress(val_loss, val_acc, description="Validation")
             # print("\n\n","Validation : Loss : {:.4f}, Acc : {:.4f}".format(
             #     val_loss, val_acc))
-            
+
             #check if model is best and save it if it is
-            model_checkpoint.update(val_loss)
+            if model_checkpoint.update(val_loss):
+                last_update = 0
+            else:
+                last_update += 1
+                print("Last update: ", last_update)
 
             if args.log:
 
                 #Write tensorboard and log
-                tensorboard_writer.add_scalars('Loss evolution', {'train_loss': train_loss,
-                                                    'val_loss': val_loss
-                                                    }, t)
+                tensorboard_writer.add_scalars(loss_name, {'train_loss': train_loss,
+                                                           'val_loss': val_loss
+                                                           }, t)
+
+                tensorboard_writer.add_scalars('Cost/', {
+                    'train_cost': train_cost,
+                    'val_cost': val_cost
+                }, t)
+                tensorboard_writer.add_scalars('Penalty/', {
+                    'train_penalty': train_penalty,
+                    'val_penalty': val_penalty
+                }, t)
+
                 lw.write_log(log_file_path, val_acc,
-                         val_loss, train_acc, train_loss)
+                             val_loss, train_acc, train_loss)
                 # tensorboard_writer.add_scalar(METRICS + 'train_loss', train_loss, t)
                 # tensorboard_writer.add_scalar(METRICS + 'train_acc',  train_acc, t)
                 # tensorboard_writer.add_scalar(METRICS + 'val_loss', val_loss, t)
@@ -287,10 +306,12 @@ def main():
     model.load_state_dict(torch.load(MODEL_PATH))
     print(DIEZ+" Final Test "+DIEZ)
 
-    test_loss, test_acc = nw.test(
+    test_loss, test_acc, test_cost, test_penalty = nw.test(
         model, test_loader, f_loss, device, final_test=True, custom_loss=args.custom_loss)
     print("Test       : Loss : {:.4f}, Acc : {:.4f}".format(
         test_loss, test_acc))
+    print("Test       : Cost : {:.4f}, Pen : {:.4f}".format(
+        test_cost, test_penalty))
 
     if args.log:
         tensorboard_writer.close()
