@@ -5,8 +5,6 @@ import os
 
 style.use("ggplot")
 
-model_name = "model-1570490221" # grab whichever model name you want here. We could also just reference the MODEL_NAME if you're in a notebook still.
-
 def generate_unique_run_dir(logdir, raw_run_name):
     i = 0
     while(True):

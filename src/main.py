@@ -53,13 +53,6 @@ DIEZ = "##########"
 # class CrossEntropyOneHot(object):
 
 
-#     def __call__(self, sample):
-#         _, labels = sample['Y'].max(dim=0)
-#         # landmarks = landmarks.transpose((2, 0, 1))
-#         return {'X_image': sample['X_image'],
-#                 'Y': labels}
-
-
 class ModelCheckpoint:
     """
     Model check class
@@ -183,23 +176,6 @@ def main():
     print("number of const: ", args.num_const)
     print("Number of parameters: ", num_param)
 
-    #Different networks with different number of deep layers
-    # if args.num_deep_layer == 0:
-    #     model = nw.FullyConnectedRegularized0(
-    #         num_param=num_param, num_var=args.num_var)
-    # elif args.num_deep_layer == 1:
-    #     model = nw.FullyConnectedRegularized1(
-    #         num_param=num_param, num_var=args.num_var)
-    # elif args.num_deep_layer == 2:
-    #     model = nw.FullyConnectedRegularized2(
-    #         num_param=num_param, num_var=args.num_var)
-    # elif args.num_deep_layer == 3:
-    #     model = nw.FullyConnectedRegularized3(
-    #         num_param=num_param, num_var=args.num_var)
-    # else:
-    #     assert(False), "Not number of correct deep layers: {}".format(
-    #         args.num_deep_layer)
-
     if args.num_deep_layer < 0:
         assert(False), "Not number of correct deep layers: {}".format(
         args.num_deep_layer)
@@ -306,10 +282,6 @@ def main():
 
                 lw.write_log(log_file_path, val_acc,
                              val_loss, train_acc, train_loss)
-                # tensorboard_writer.add_scalar(METRICS + 'train_loss', train_loss, t)
-                # tensorboard_writer.add_scalar(METRICS + 'train_acc',  train_acc, t)
-                # tensorboard_writer.add_scalar(METRICS + 'val_loss', val_loss, t)
-                # tensorboard_writer.add_scalar(METRICS + 'val_acc',  val_acc, t)
 
     model.load_state_dict(torch.load(MODEL_PATH))
     print(DIEZ+" Final Test "+DIEZ)
