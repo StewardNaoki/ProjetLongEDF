@@ -18,10 +18,12 @@ class FullyConnectedRegularized(nn.Module):
         fcIn = nn.Linear(num_param, 100)
         fcOut = nn.Linear(100, num_var)
 
-        self.layer_list.append(nn.Dropout(0.2))
+        if num_depth > 0:
+            self.layer_list.append(nn.Dropout(0.2))
         self.layer_list.append(fcIn)
         self.layer_list.append(nn.ReLU())
-        self.layer_list.append(nn.Dropout(0.5))
+        if num_depth > 0:
+            self.layer_list.append(nn.Dropout(0.5))
         for depth in range(num_depth):
             self.layer_list.append(nn.Linear(100, 100))
             self.layer_list.append(nn.ReLU())
