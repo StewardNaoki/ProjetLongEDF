@@ -2,17 +2,19 @@ import time
 import matplotlib.pyplot as plt
 from matplotlib import style
 import os
+import sys
 
 style.use("ggplot")
 
-def generate_unique_run_dir(logdir, raw_run_name):
+def generate_unique_dir(logdir, raw_run_name):
     i = 0
     while(True):
         run_name = raw_run_name + "_" + str(i)
         run_folder = os.path.join(logdir, run_name)
         if not os.path.isdir(run_folder):
             print("New run folder: {}".format(run_folder))
-            return run_folder, i
+            os.mkdir(run_folder)
+            return run_folder + "/", i
         i = i + 1
 
 def generate_unique_logpath(logdir, raw_run_name):
@@ -65,3 +67,31 @@ def create_acc_loss_graph(log_file_path):
     ax2.plot(list_time,list_val_loss, label="val_loss")
     ax2.legend(loc=2)
     plt.show()
+
+def summary_writer(logdir, model, optimizer, tensorboard_writer, num_run):
+
+    summary_file = open(logdir + "/summary.txt", 'w')
+
+    summary_text = """
+RUN Number: {}
+===============
+
+Executed command
+================
+{}
+
+Model summary
+=============
+{}
+
+
+{} trainable parameters
+
+Optimizer
+========
+{}
+""".format(num_run," ".join(sys.argv), model, sum(p.numel() for p in model.parameters() if p.requires_grad), optimizer)
+    summary_file.write(summary_text)
+    summary_file.close()
+
+    tensorboard_writer.add_text("Summary Run {}".format(num_run), summary_text)

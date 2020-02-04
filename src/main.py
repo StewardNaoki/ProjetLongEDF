@@ -27,9 +27,9 @@ CREATE_CSV = True
 PATH_DATA = "./../DATA/"
 # CSV_NAME = "input.csv"
 LOG_DIR = "./../log/"
-FC1 = "fc1/"
+MODEL_DIR = "model/"
 BEST_MODELE = "best_model.pt"
-MODEL_PATH = LOG_DIR + FC1 + BEST_MODELE
+# MODEL_PATH = LOG_DIR + FC1 + BEST_MODELE
 
 # MODELE_LOG_FILE = LOG_DIR + "modele.log"
 # MODELE_TIME = f"model-{int(time.time())}"
@@ -213,17 +213,21 @@ def main():
     #define optimizer
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
 
+
+    #Make run directory
+    run_dir_path, num_run = lw.generate_unique_dir(LOG_DIR, "run")
+
     #setup model checkpoint
-    top_logdir = LOG_DIR + FC1
-    if not os.path.exists(top_logdir):
-        os.mkdir(top_logdir)
-    model_checkpoint = ModelCheckpoint(top_logdir + BEST_MODELE, model)
+    path_model_check_point = run_dir_path + MODEL_DIR
+    if not os.path.exists(path_model_check_point):
+        os.mkdir(path_model_check_point)
+    model_checkpoint = ModelCheckpoint(path_model_check_point + BEST_MODELE, model)
 
     #setup logging
     if args.log:
         print("Writing log")
         #generate unique folder for new run
-        run_dir_path, num_run = lw.generate_unique_run_dir(LOG_DIR, "run")
+        
 
         tensorboard_writer = SummaryWriter(
             log_dir=run_dir_path, filename_suffix=".log")
@@ -232,6 +236,8 @@ def main():
         run_desc = "Epoch{}Reg{}Var{}Const{}CLoss{}Dlayer{}Alpha{}".format(
             args.epoch, args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer, args.alpha)
         log_file_path = LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
+
+        lw.summary_writer(run_dir_path, model,optimizer,tensorboard_writer,num_run)
 
     last_update = 0
 
@@ -283,7 +289,7 @@ def main():
                 lw.write_log(log_file_path, val_acc,
                              val_loss, train_acc, train_loss)
 
-    model.load_state_dict(torch.load(MODEL_PATH))
+    model.load_state_dict(torch.load(path_model_check_point + BEST_MODELE))
     print(DIEZ+" Final Test "+DIEZ)
 
     test_loss, test_acc, test_cost, test_penalty = nw.test(
