@@ -240,7 +240,7 @@ def main():
         lw.summary_writer(run_dir_path, model,optimizer,tensorboard_writer,num_run)
 
     last_update = 0
-
+    start_time = time.time()
     with tqdm(total=args.epoch) as pbar:
         for t in range(args.epoch):
             pbar.update(1)
@@ -288,6 +288,8 @@ def main():
 
                 lw.write_log(log_file_path, val_acc,
                              val_loss, train_acc, train_loss)
+    total_run_time = time.time() - start_time
+    print("--- %s seconds ---" % (total_run_time))
 
     model.load_state_dict(torch.load(path_model_check_point + BEST_MODELE))
     print(DIEZ+" Final Test "+DIEZ)
@@ -300,6 +302,7 @@ def main():
         test_cost, test_penalty))
 
     if args.log:
+        lw.end_summary_witer(run_dir_path, total_run_time, test_loss, test_acc, test_cost, test_penalty, tensorboard_writer,num_run)
         tensorboard_writer.close()
 
 
