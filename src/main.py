@@ -103,6 +103,8 @@ def main():
                         help="Write log or not (default: False)")
     parser.add_argument("--l2_reg", type=float, default=0.001,
                         help="L2 regularisation (default: 0.001)")
+    parser.add_argument("--dropout", default=False, action='store_true',
+                        help="Activate or not dropout")
 
     parser.add_argument("--num_var", type=int, default=5,
                         help="Number of variables (default: 5)")
@@ -178,11 +180,11 @@ def main():
 
     if args.num_deep_layer < 0:
         assert(False), "Not number of correct deep layers: {}".format(
-        args.num_deep_layer)
+            args.num_deep_layer)
     else:
         print("Model with {} layers".format(args.num_deep_layer))
-        model = nw.FullyConnectedRegularized(num_param=num_param, num_var=args.num_var, num_depth= args.num_deep_layer)
-
+        model = nw.FullyConnectedRegularized(
+            num_param=num_param, num_var=args.num_var, num_depth=args.num_deep_layer, dropout=args.dropout)
 
     #print model info
     print("Network architechture:\n", model)
@@ -213,7 +215,6 @@ def main():
     #define optimizer
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
 
-
     #Make run directory
     run_dir_path, num_run = lw.generate_unique_dir(LOG_DIR, "run")
 
@@ -221,13 +222,13 @@ def main():
     path_model_check_point = run_dir_path + MODEL_DIR
     if not os.path.exists(path_model_check_point):
         os.mkdir(path_model_check_point)
-    model_checkpoint = ModelCheckpoint(path_model_check_point + BEST_MODELE, model)
+    model_checkpoint = ModelCheckpoint(
+        path_model_check_point + BEST_MODELE, model)
 
     #setup logging
     if args.log:
         print("Writing log")
         #generate unique folder for new run
-        
 
         tensorboard_writer = SummaryWriter(
             log_dir=run_dir_path, filename_suffix=".log")
@@ -237,7 +238,8 @@ def main():
             args.epoch, args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer, args.alpha)
         log_file_path = LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
 
-        lw.summary_writer(run_dir_path, model,optimizer,tensorboard_writer,num_run)
+        lw.summary_writer(run_dir_path, model, optimizer,
+                          tensorboard_writer, num_run)
 
     last_update = 0
     start_time = time.time()
@@ -277,7 +279,7 @@ def main():
                                                            'val_loss': val_loss
                                                            }, t)
 
-                tensorboard_writer.add_scalars('Cost/', {
+                tensorboard_writer.add_scalars('PureCost/', {
                     'train_cost': train_cost,
                     'val_cost': val_cost
                 }, t)
@@ -302,7 +304,8 @@ def main():
         test_cost, test_penalty))
 
     if args.log:
-        lw.end_summary_witer(run_dir_path, total_run_time, test_loss, test_acc, test_cost, test_penalty, tensorboard_writer,num_run)
+        lw.end_summary_witer(run_dir_path, total_run_time, test_loss,
+                             test_acc, test_cost, test_penalty, tensorboard_writer, num_run)
         tensorboard_writer.close()
 
 

@@ -54,12 +54,12 @@ def generate_csv(file_name, num_var, num_const, num_prob):
         prob_var = [LpVariable("Var{}".format(i), 0)for i in range(num_var)]
         # prob_var = LpVariable.dicts("Vars",list_var,0)
 
-        prob += lpSum([prob_var[i] * C[i]
+        prob += lpSum([-1*prob_var[i] *C[i]
                        for i in range(num_var)]), "CostFunction"
 
         for j in range(num_const):
             prob += lpSum([prob_var[i] * A[j][i]
-                           for i in range(num_var)]) >= B[j], "ProblemLine{}".format(j)
+                           for i in range(num_var)]) <= B[j], "ProblemLine{}".format(j)
 
         # The problem data is written to an .lp file
         prob.writeLP("test.lp")
