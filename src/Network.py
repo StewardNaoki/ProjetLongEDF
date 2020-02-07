@@ -304,7 +304,8 @@ class CustomLoss():
             # self.penalty = abs(float(torch.mean((output_penalty - target_penalty))))
             self.penalty = abs(float(torch.mean((output_penalty))))
 
-            result += torch.exp(torch.mean(output_penalty*(self.alpha)))
+            # result += torch.exp(torch.mean(output_penalty*(self.alpha)))
+            result += torch.mean(output_penalty)*(self.alpha) 
 
             # negative_penalty = -1*torch.clamp(outputs,max = 0)
 

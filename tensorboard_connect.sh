@@ -1,1 +1,1 @@
-tensorboard --logdir ./log/run_$1
+tensorboard --logdir ./log
