@@ -35,6 +35,9 @@ def write_log(log_file_path, val_acc, val_loss, train_acc, train_loss):
         print("Logging to {}".format(log_file_path))
         f.write(f"{round(time.time(),3)},{round(float(val_acc),2)},{round(float(val_loss),4)},{round(float(train_acc),2)},{round(float(train_loss),4)}\n")
 
+def write_examples(file_path):
+    pass
+
 
 def create_acc_loss_graph(log_file_path):
     contents = open(log_file_path, "r").read().split("\n")

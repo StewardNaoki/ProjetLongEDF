@@ -54,7 +54,7 @@ def generate_csv(file_name, num_var, num_const, num_prob):
         prob_var = [LpVariable("Var{}".format(i), 0)for i in range(num_var)]
         # prob_var = LpVariable.dicts("Vars",list_var,0)
 
-        prob += lpSum([-1*prob_var[i] *C[i]
+        prob += lpSum([(-1*prob_var[i] *C[i])
                        for i in range(num_var)]), "CostFunction"
 
         for j in range(num_const):

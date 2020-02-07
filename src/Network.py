@@ -238,10 +238,16 @@ class CustomMSELoss():
 
         output_penalty = (torch.clamp((torch.bmm(outputs.view(
             num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-        target_penalty = (torch.clamp((torch.bmm(targets.view(
-            num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
 
-        self.penalty = abs(float(torch.mean(output_penalty - target_penalty)))
+
+        # target_penalty = (torch.clamp((torch.bmm(targets.view(
+        #     num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+
+        # mean_target_penalty = float(torch.mean(target_penalty))
+        # assert(mean_target_penalty == 0), "Target penalty not null: {}".format(mean_target_penalty)
+
+        # self.penalty = abs(float(torch.mean(output_penalty - target_penalty)))
+        self.penalty = abs(float(torch.mean(output_penalty)))
         return self.cost, self.penalty
     
     def print_info(self):
@@ -288,14 +294,17 @@ class CustomLoss():
             b_const = inputs[:, -self.num_const -
                              num_var:-num_var].view(num_batch, 1, -1)
 
-            outputs_penalty = (torch.clamp((torch.bmm(outputs.view(
+            output_penalty = (torch.clamp((torch.bmm(outputs.view(
                 num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-            target_penalty = (torch.clamp((torch.bmm(targets.view(
-                num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+            # target_penalty = (torch.clamp((torch.bmm(targets.view(
+            #     num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+            # mean_target_penalty = float(torch.mean(target_penalty))
+            # assert(mean_target_penalty == 0), "Target penalty not null: {}".format(mean_target_penalty)
 
-            self.penalty = abs(float(torch.mean((outputs_penalty - target_penalty))))
+            # self.penalty = abs(float(torch.mean((output_penalty - target_penalty))))
+            self.penalty = abs(float(torch.mean((output_penalty))))
 
-            result += self.alpha * torch.mean(outputs_penalty)
+            result += torch.exp(torch.mean(output_penalty*(self.alpha)))
 
             # negative_penalty = -1*torch.clamp(outputs,max = 0)
 
@@ -304,77 +313,3 @@ class CustomLoss():
         return result
 
         # print("name of parameters ",name)
-
-
-# class CustomLoss2():
-#     def __init__(self, num_const):
-#         self.num_const = num_const
-
-#     def __call__(self, outputs, targets, inputs):
-#         # print(outputs.shape)
-#         # print(targets.shape)
-#         # print(inputs.shape)
-#         num_batch = outputs.shape[0]
-#         num_var = outputs.shape[1]
-#         # print(num_batch)
-#         # print("print costs")
-#         # print(output.view(num_batch, 1 ,self.num_const))
-#         # print(inputs[:,-self.num_const:].view(num_batch, self.num_const, 1))
-#         a_const = inputs[:, :-self.num_const -
-#                          num_var].view(num_batch, self.num_const, num_var).transpose(2, 1)
-#         b_const = inputs[:, -self.num_const-num_var:-num_var].view(num_batch, 1, -1)
-#         # print("print consts")
-#         # print(a_const)
-#         # print(b_const)
-#         outputs_penalty = (torch.clamp((torch.bmm(outputs.view(
-#             num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-#         target_penalty = (torch.clamp((torch.bmm(targets.view(
-#             num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-#         # print(torch.clamp((torch.bmm(outputs.view(num_batch, 1 ,self.num_var), a_const) - b_const) , min= 0))
-#         # print("print reg")
-#         # print(outputs_penalty)
-#         # print(target_penalty)
-
-#         outputs_cost = torch.bmm(outputs.view(
-#             num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
-#         targets_cost = torch.bmm(targets.view(
-#             num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
-
-#         # print("costs ",outputs_cost)
-#         # print("costs ",targets_cost)
-
-#         # print(outputs_cost.shape)
-#         # print(outputs_penalty.shape)
-#         outputs_cost += outputs_penalty.view(num_batch, 1, -1)
-#         targets_cost += target_penalty.view(num_batch, 1, -1)
-#         # print("total ",outputs_cost)
-#         # print("total ",targets_cost)
-
-#         return torch.mean((outputs_cost - targets_cost)**2)
-
-
-# class ConstraintsPenalty():
-
-#     def __init__(self, num_const, alpha):
-#         self.num_const = num_const
-#         self.alpha = alpha
-
-#     def __call__(self, outputs, targets, inputs):
-#         # print(outputs.shape)
-#         # print(targets.shape)
-#         # print(inputs.shape)
-#         num_batch = outputs.shape[0]
-#         num_var = outputs.shape[1]
-
-#         a_const = inputs[:, :-self.num_const -
-#                          num_var].view(num_batch, self.num_const, num_var).transpose(2, 1)
-#         b_const = inputs[:, -self.num_const-num_var:-num_var].view(num_batch, 1, -1)
-
-
-#         outputs_penalty = (torch.clamp((torch.bmm(outputs.view(
-#             num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-#         target_penalty = (torch.clamp((torch.bmm(targets.view(
-#             num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-
-
-#         return self.alpha * torch.mean((outputs_penalty - target_penalty)**2)
