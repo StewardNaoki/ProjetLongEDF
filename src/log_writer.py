@@ -5,13 +5,14 @@ import os
 import sys
 
 style.use("ggplot")
-MAX_TIME = 10000
+# MAX_TIME = 1000000
 
 def generate_unique_dir(logdir, raw_run_name):
     i = 0
     while(True):
-        i = time.time() % MAX_TIME
-        run_name = raw_run_name + "_" + str(int(i))
+        # i = int(time.time() % MAX_TIME)
+        i = int(time.time())
+        run_name = raw_run_name  + str(i)
         run_folder = os.path.join(logdir, run_name)
         if not os.path.isdir(run_folder):
             print("New run folder: {}".format(run_folder))
@@ -24,8 +25,9 @@ def generate_unique_dir(logdir, raw_run_name):
 def generate_unique_logpath(logdir, raw_run_name):
     i = 0
     while(True):
-        i = time.time() % MAX_TIME
-        run_name = raw_run_name + "_" + str(int(i))
+        # i = int(time.time() % MAX_TIME)
+        i = int(time.time())
+        run_name = raw_run_name + str(i)
         log_path = os.path.join(logdir, run_name + ".log")
         if not os.path.isfile(log_path):
             print("New log file: {}".format(log_path))

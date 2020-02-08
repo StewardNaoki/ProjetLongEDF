@@ -215,7 +215,8 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
 
     #Make run directory
-    run_dir_path, num_run = lw.generate_unique_dir(LOG_DIR, "run")
+    run_name = "runV{}Cst{}CLoss{}-".format(args.num_var, args.num_const, int(args.custom_loss))
+    run_dir_path, num_run = lw.generate_unique_dir(LOG_DIR, run_name)
 
     #setup model checkpoint
     path_model_check_point = run_dir_path + MODEL_DIR
@@ -233,8 +234,8 @@ def main():
             log_dir=run_dir_path, filename_suffix=".log")
 
         #write short description of the run
-        run_desc = "Epoch{}Reg{}Var{}Const{}CLoss{}Dlayer{}Alpha{}".format(
-            args.epoch, args.l2_reg, args.num_var, args.num_const, args.custom_loss, args.num_deep_layer, args.alpha)
+        run_desc = "Epoch{}V{}Cst{}CLoss{}Dlayer{}Alpha{}".format(
+            args.epoch, args.num_var, args.num_const, int(args.custom_loss), args.num_deep_layer, args.alpha)
         log_file_path = LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
 
         lw.summary_writer(run_dir_path, model, optimizer,
