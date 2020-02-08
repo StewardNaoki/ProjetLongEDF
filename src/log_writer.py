@@ -40,8 +40,7 @@ def write_log(log_file_path, val_acc, val_loss, train_acc, train_loss):
         print("Logging to {}".format(log_file_path))
         f.write(f"{round(time.time(),3)},{round(float(val_acc),2)},{round(float(val_loss),4)},{round(float(train_acc),2)},{round(float(train_loss),4)}\n")
 
-def write_examples(file_path):
-    pass
+
 
 
 def create_acc_loss_graph(log_file_path):
@@ -79,6 +78,14 @@ def create_acc_loss_graph(log_file_path):
     ax2.legend(loc=2)
     plt.show()
 
+def write_examples(logdir, example_text, tensorboard_writer, num_run):
+    example_file = open(logdir + "/examples.txt", 'w')
+    example_file.write(example_text)
+    example_file.close()
+    tensorboard_writer.add_text("Run {} Example".format(num_run), example_text)
+
+
+
 
 def summary_writer(logdir, model, optimizer, tensorboard_writer, num_run):
 
@@ -106,7 +113,7 @@ Optimizer
     summary_file.write(summary_text)
     summary_file.close()
 
-    tensorboard_writer.add_text("Summary Run {}".format(num_run), summary_text)
+    tensorboard_writer.add_text("Run {} Summary".format(num_run), summary_text)
 
 
 def end_summary_witer(logdir, total_train_time, test_loss, test_acc, test_cost, test_pen, tensorboard_writer, num_run):
@@ -127,4 +134,4 @@ Cost:    {:.4f}, Pen:    {:.4f}
     summary_file.write(summary_text)
     summary_file.close()
 
-    tensorboard_writer.add_text("Summary Run {}".format(num_run), summary_text)
+    tensorboard_writer.add_text("Run {} Summary".format(num_run), summary_text)

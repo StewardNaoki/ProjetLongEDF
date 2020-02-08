@@ -215,7 +215,8 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
 
     #Make run directory
-    run_name = "runV{}Cst{}CLoss{}-".format(args.num_var, args.num_const, int(args.custom_loss))
+    run_name = "runV{}C{}D{}CL{}-".format(
+        args.num_var, args.num_const, args.num_deep_layer, int(args.custom_loss))
     run_dir_path, num_run = lw.generate_unique_dir(LOG_DIR, run_name)
 
     #setup model checkpoint
@@ -229,7 +230,6 @@ def main():
     if args.log:
         print("Writing log")
         #generate unique folder for new run
-
         tensorboard_writer = SummaryWriter(
             log_dir=run_dir_path, filename_suffix=".log")
 
@@ -258,7 +258,7 @@ def main():
             # print(args.custom_loss)
 
             #test
-            val_loss, val_acc, val_cost, val_penalty = nw.test(
+            val_loss, val_acc, val_cost, val_penalty, _ = nw.test(
                 model, test_loader, f_loss, device, custom_loss=args.custom_loss)
 
             progress(val_loss, val_acc, description="Validation")
@@ -296,8 +296,8 @@ def main():
     model.load_state_dict(torch.load(path_model_check_point + BEST_MODELE))
     print(DIEZ+" Final Test "+DIEZ)
 
-    test_loss, test_acc, test_cost, test_penalty = nw.test(
-        model, test_loader, f_loss, device, final_test=True, custom_loss=args.custom_loss)
+    test_loss, test_acc, test_cost, test_penalty, example_text = nw.test(
+        model, test_loader, f_loss, device, custom_loss=args.custom_loss, final_test=True, num_const= args.num_const)
     print("Test       : Loss : {:.4f}, Acc : {:.4f}".format(
         test_loss, test_acc))
     print("Test       : Cost : {:.4f}, Pen : {:.4f}".format(
@@ -306,6 +306,8 @@ def main():
     if args.log:
         lw.end_summary_witer(run_dir_path, total_run_time, test_loss,
                              test_acc, test_cost, test_penalty, tensorboard_writer, num_run)
+        lw.write_examples(run_dir_path, example_text,
+                          tensorboard_writer, num_run)
         tensorboard_writer.close()
 
 

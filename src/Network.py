@@ -6,6 +6,8 @@ from torchvision import transforms
 import time
 
 MAX_SHOW = 15
+DIEZ = "##########"
+EQUAL = "==============="
 
 class FullyConnectedRegularized(nn.Module):
     def __init__(self, num_param, num_var, l2_reg=0, num_depth = 0, dropout = False):
@@ -116,7 +118,7 @@ def train(model, loader, f_loss, optimizer, device, custom_loss=False):
     return tot_loss/N, correct/N, cost/N, penalty/N
 
 
-def test(model, loader, f_loss, device, final_test=False, custom_loss=False):
+def test(model, loader, f_loss, device, custom_loss=False, final_test=False, num_const = 0):
     """Test a model by iterating over the loader
 
     Arguments :
@@ -144,6 +146,7 @@ def test(model, loader, f_loss, device, final_test=False, custom_loss=False):
         N = 0
         tot_loss, correct = 0.0, 0.0
         cost, penalty = 0.0, 0.0
+        example_text = ""
 
         for i, (inputs, targets) in enumerate(loader):
             # We got a minibatch from the loader within inputs and targets
@@ -184,12 +187,13 @@ def test(model, loader, f_loss, device, final_test=False, custom_loss=False):
             correct += (predicted_targets == targets).sum().item()
 
             if final_test and i < MAX_SHOW:
-                print_costs(outputs, targets, inputs)
+                example_text += print_costs(i ,outputs, targets, inputs, num_const)
+                
 
-    return tot_loss/N, correct/N, cost/N, penalty/N
+    return tot_loss/N, correct/N, cost/N, penalty/N, example_text
 
 
-def print_costs(outputs, targets, inputs):
+def print_costs(num, outputs, targets, inputs, num_const):
         """Function that print the cost of a given output and target
 
         Arguments:
@@ -197,18 +201,70 @@ def print_costs(outputs, targets, inputs):
             targets {torch tensor} -- target
             inputs {torch tensor} -- constraints of the problem
         """
+        example_text = ""
         num_batch = outputs.shape[0]
         num_var = outputs.shape[1]
         output_cost = torch.bmm(outputs.view(
             num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
         target_cost = torch.bmm(targets.view(
             num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+
+        a_const = inputs[:, :-num_const -
+                         num_var].view(num_batch, num_const, num_var).transpose(2, 1)
+        b_const = inputs[:, -num_const -
+                         num_var:-num_var].view(num_batch, 1, -1)
+
+        output_penalty = (torch.clamp((torch.bmm(outputs.view(
+            num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+        A = a_const.transpose(2, 1)[0]
+        B = b_const[0]
+        C = inputs[:, -num_var:][0]
+
+        # print(inputs)
+        # print(inputs.shape)
+
         # print(output_cost.shape)
-        print("targets cost: ", -1*float(target_cost[0]))# ne pas oublier les -1
-        print("outputs cost: ", -1*float(output_cost[0]))
-        print("targets: ", targets[0])
-        print("outputs: ", outputs[0])
-        print("\n\n")
+        # print("targets cost: ", -1*float(target_cost[0]))# ne pas oublier les -1
+        # print("outputs cost: ", -1*float(output_cost[0]))
+        # print("targets: ", targets[0])
+        # print("outputs: ", outputs[0])
+        # print("\n\n")
+
+        example_text +="""Example {}
+===============
+
+Problem
+===============
+A: {}
+B: {}
+C: {}
+
+Costs
+===============
+targets cost: {}
+
+
+output cost: {}
+
+
+Penalty
+===============
+output penalty: {}
+
+
+Vector
+===============
+targets vector: {}
+
+
+output vector: {}
+
+
+""".format(num,A, B, C, float(target_cost[0]), float(output_cost[0]), output_penalty[0], targets[0], outputs[0])
+
+        print("example_text: ",example_text)
+
+        return example_text
 
 
 class CustomMSELoss():
