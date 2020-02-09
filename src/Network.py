@@ -9,8 +9,9 @@ MAX_SHOW = 15
 DIEZ = "##########"
 EQUAL = "==============="
 
+
 class FullyConnectedRegularized(nn.Module):
-    def __init__(self, num_param, num_var, l2_reg=0, num_depth = 0, dropout = False):
+    def __init__(self, num_param, num_var, l2_reg=0, num_depth=0, dropout=False):
         super(FullyConnectedRegularized, self).__init__()
 
         self.l2_reg = l2_reg
@@ -32,8 +33,7 @@ class FullyConnectedRegularized(nn.Module):
 
         self.layer_list.append(fcOut)
 
-
-        self.Layers = nn.Sequential( *self.layer_list)
+        self.Layers = nn.Sequential(*self.layer_list)
 
     def forward(self, x):
         #Forward pass
@@ -43,8 +43,7 @@ class FullyConnectedRegularized(nn.Module):
         return output
 
 
-
-def train(model, loader, f_loss, optimizer, device, custom_loss=False):
+def train(model, loader, f_loss, optimizer, device):
     """Train a model for one epoch, iterating over the loader
     using the f_loss to compute the loss and the optimizer
     to update the parameters of the model.
@@ -82,22 +81,14 @@ def train(model, loader, f_loss, optimizer, device, custom_loss=False):
         outputs = model(inputs)
 
         #get loss
-        if(custom_loss):
-            loss = f_loss(outputs, targets, inputs)
-            # print("loss ", loss)
-            tot_loss += inputs.shape[0] * \
-                f_loss(outputs, targets, inputs).item()
-            c, p = f_loss.get_info()
-            cost += c
-            penalty += p
 
-        else:
-            loss = f_loss(outputs, targets)
-            # print("loss ", loss)
-            tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
-            c, p = f_loss.get_info(outputs, targets, inputs)
-            cost += c
-            penalty += p
+        loss = f_loss(outputs, targets, inputs)
+        # print("loss ", loss)
+        tot_loss += inputs.shape[0] * \
+            f_loss(outputs, targets, inputs).item()
+        c, p = f_loss.get_info()
+        cost += c
+        penalty += p
 
         N += inputs.shape[0]
 
@@ -118,7 +109,7 @@ def train(model, loader, f_loss, optimizer, device, custom_loss=False):
     return tot_loss/N, correct/N, cost/N, penalty/N
 
 
-def test(model, loader, f_loss, device, custom_loss=False, final_test=False, num_const = 0):
+def test(model, loader, f_loss, device, final_test=False, num_const=0):
     """Test a model by iterating over the loader
 
     Arguments :
@@ -167,17 +158,12 @@ def test(model, loader, f_loss, device, custom_loss=False, final_test=False, num
             # The multipliation by inputs.shape[0] is due to the fact
             # that our loss criterion is averaging over its samples
 
-            if(custom_loss):
-                tot_loss += inputs.shape[0] * \
-                    f_loss(outputs, targets, inputs).item()
-                c, p = f_loss.get_info()
-                cost += c
-                penalty += p
-            else:
-                tot_loss += inputs.shape[0] * f_loss(outputs, targets).item()
-                c, p = f_loss.get_info(outputs, targets, inputs)
-                cost += c
-                penalty += p
+            tot_loss += inputs.shape[0] * \
+                f_loss(outputs, targets, inputs).item()
+            c, p = f_loss.get_info()
+            cost += c
+            penalty += p
+
 
             # For the accuracy, we compute the labels for each input image
             # Be carefull, the model is outputing scores and not the probabilities
@@ -187,8 +173,8 @@ def test(model, loader, f_loss, device, custom_loss=False, final_test=False, num
             correct += (predicted_targets == targets).sum().item()
 
             if final_test and i < MAX_SHOW:
-                example_text += print_costs(i ,outputs, targets, inputs, num_const)
-                
+                example_text += print_costs(i, outputs,
+                                            targets, inputs, num_const)
 
     return tot_loss/N, correct/N, cost/N, penalty/N, example_text
 
@@ -230,13 +216,17 @@ def print_costs(num, outputs, targets, inputs, num_const):
         # print("outputs: ", outputs[0])
         # print("\n\n")
 
-        example_text +="""Example {}
+        example_text += """Example {}
 ===============
 
 Problem
 ===============
 A: {}
+
+
 B: {}
+
+
 C: {}
 
 Costs
@@ -260,21 +250,31 @@ targets vector: {}
 output vector: {}
 
 
-""".format(num,A, B, C, float(target_cost[0]), float(output_cost[0]), output_penalty[0], targets[0], outputs[0])
+""".format(num, A, B, C, float(target_cost[0]), float(output_cost[0]), output_penalty[0], targets[0], outputs[0])
 
-        print("example_text: ",example_text)
+        print("example_text: ", example_text)
 
         return example_text
 
 
 class CustomMSELoss():
-    def __init__(self, num_const=8):
+    def __init__(self,alpha ,num_const=8):
+        self.alpha = alpha
         self.num_const = num_const
         self.f_loss = nn.MSELoss()
         self.cost = 0.0
         self.penalty = 0.0
+        
 
-    def get_info(self, outputs, targets, inputs):
+    def get_info(self):
+
+        return self.cost, self.penalty
+
+    def print_info(self):
+        print("Cost: ", self.cost)
+        print("Penalty: ", self.penalty)
+
+    def __call__(self, outputs, targets, inputs):
 
         num_batch = outputs.shape[0]
         num_var = outputs.shape[1]
@@ -284,37 +284,22 @@ class CustomMSELoss():
             num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
         self.cost = abs(float(torch.mean((output_cost - target_cost))))
 
-        a_const = inputs[:, :-self.num_const -
-                         num_var].view(num_batch, self.num_const, num_var).transpose(2, 1)
-        b_const = inputs[:, -self.num_const -
-                         num_var:-num_var].view(num_batch, 1, -1)
+        # a_const = inputs[:, :-self.num_const -
+        #                  num_var].view(num_batch, self.num_const, num_var).transpose(2, 1)
+        # b_const = inputs[:, -self.num_const -
+        #                  num_var:-num_var].view(num_batch, 1, -1)
 
-        # print("a_const: ", a_const)
-        # print("b_const: ", b_const)
-
-        output_penalty = (torch.clamp((torch.bmm(outputs.view(
-            num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-
-
-        # target_penalty = (torch.clamp((torch.bmm(targets.view(
+        # output_penalty = (torch.clamp((torch.bmm(outputs.view(
         #     num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+        res = 0
+        if self.alpha != 0:
+            self.penalty, res = compute_penalty(
+                outputs, inputs, self.alpha, num_batch, self.num_const, num_var)
 
-        # mean_target_penalty = float(torch.mean(target_penalty))
-        # assert(mean_target_penalty == 0), "Target penalty not null: {}".format(mean_target_penalty)
-
-        # self.penalty = abs(float(torch.mean(output_penalty - target_penalty)))
-        self.penalty = abs(float(torch.mean(output_penalty)))
-        return self.cost, self.penalty
-    
-    def print_info(self):
-        print("Cost: ",self.cost)
-        print("Penalty: ",self.penalty)
-
-    def __call__(self, outputs, targets):
-        return self.f_loss(outputs, targets)
+        return self.f_loss(outputs, targets) + res
 
 
-class CustomLoss():
+class PureCostLoss():
 
     def __init__(self, alpha=0, num_const=8):
         self.alpha = alpha
@@ -326,10 +311,10 @@ class CustomLoss():
         # print("cost diff: ", self.cost_diff)
         # print("const penalty: ", self.const_penalty)
         return self.cost, self.penalty
-    
+
     def print_info(self):
-        print("Cost: ",self.cost)
-        print("Penalty: ",self.penalty)
+        print("Cost: ", self.cost)
+        print("Penalty: ", self.penalty)
 
     def __call__(self, outputs, targets, inputs):
         num_batch = outputs.shape[0]
@@ -342,31 +327,72 @@ class CustomLoss():
             num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
         self.cost = abs(float(torch.mean((output_cost - target_cost))))
 
-        result = -1*torch.mean(output_cost) # ne pas oublier le -1
+        result = -1*torch.mean(output_cost)  # ne pas oublier le -1
+        # result = torch.mean((output_cost - target_cost)**2)
 
         if self.alpha != 0:
-            a_const = inputs[:, :-self.num_const -
-                             num_var].view(num_batch, self.num_const, num_var).transpose(2, 1)
-            b_const = inputs[:, -self.num_const -
-                             num_var:-num_var].view(num_batch, 1, -1)
+            # a_const = inputs[:, :-self.num_const -
+            #                  num_var].view(num_batch, self.num_const, num_var).transpose(2, 1)
+            # b_const = inputs[:, -self.num_const -
+            #                  num_var:-num_var].view(num_batch, 1, -1)
 
-            output_penalty = (torch.clamp((torch.bmm(outputs.view(
-                num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-            # target_penalty = (torch.clamp((torch.bmm(targets.view(
+            # output_penalty = (torch.clamp((torch.bmm(outputs.view(
             #     num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-            # mean_target_penalty = float(torch.mean(target_penalty))
-            # assert(mean_target_penalty == 0), "Target penalty not null: {}".format(mean_target_penalty)
+            self.penalty, res = compute_penalty(
+                outputs, inputs, self.alpha, num_batch, self.num_const, num_var)
 
-            # self.penalty = abs(float(torch.mean((output_penalty - target_penalty))))
-            self.penalty = abs(float(torch.mean((output_penalty))))
-
-            # result += torch.exp(torch.mean(output_penalty*(self.alpha)))
-            result += torch.mean(output_penalty)*(self.alpha) 
-
-            # negative_penalty = -1*torch.clamp(outputs,max = 0)
-
-            # result += self.alpha *torch.mean(negative_penalty**2)
+            result += res
 
         return result
 
         # print("name of parameters ",name)
+
+
+class GuidedCostLoss():
+
+    def __init__(self, alpha=0, num_const=8):
+        self.alpha = alpha
+        self.num_const = num_const
+        self.cost = 0.0
+        self.penalty = 0.0
+
+    def get_info(self):
+        # print("cost diff: ", self.cost_diff)
+        # print("const penalty: ", self.const_penalty)
+        return self.cost, self.penalty
+
+    def print_info(self):
+        print("Cost: ", self.cost)
+        print("Penalty: ", self.penalty)
+
+    def __call__(self, outputs, targets, inputs):
+        num_batch = outputs.shape[0]
+        num_var = outputs.shape[1]
+
+        target_cost = torch.bmm(targets.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+        output_cost = torch.bmm(outputs.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+        self.cost = abs(float(torch.mean((output_cost - target_cost))))
+
+        result = torch.mean((output_cost - target_cost)**2)
+
+        if self.alpha != 0:
+            self.penalty, res = compute_penalty(
+                outputs, inputs, self.alpha, num_batch, self.num_const, num_var)
+
+            result += res
+
+        return result
+
+
+
+def compute_penalty(outputs, inputs, alpha, num_batch, num_const, num_var):
+    a_const = inputs[:, :-num_const -
+                     num_var].view(num_batch, num_const, num_var).transpose(2, 1)
+    b_const = inputs[:, -num_const -
+                     num_var:-num_var].view(num_batch, 1, -1)
+
+    output_penalty = (torch.clamp((torch.bmm(outputs.view(
+        num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+    return abs(float(torch.mean((output_penalty)))),  torch.mean(output_penalty)*(alpha)

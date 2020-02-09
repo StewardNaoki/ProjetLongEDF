@@ -111,8 +111,8 @@ def main():
                         help="number of constrains (default: 8)")
     parser.add_argument("--num_prob", type=int, default=10,
                         help="number of problems to generate (default: 10)")
-    parser.add_argument("--custom_loss", default=False, action='store_true',
-                        help="Use of custom loss (default: False)")
+    parser.add_argument("--loss", type = str, default="MSE",
+                        help="Use of custom loss (default: MSE)")
     parser.add_argument("--num_deep_layer", type=int, default=1,
                         help="Number of deep layer used (default: 1)")
     parser.add_argument("--alpha", type=float, default=0.0,
@@ -200,23 +200,27 @@ def main():
 
     #Define loss
     # f_loss = torch.nn.CrossEntropyLoss()
-    if args.custom_loss:
-        print("Custom loss used with alpha: {}".format(args.alpha))
-        loss_name = "CustomLoss/"
-        f_loss = nw.CustomLoss(num_const=args.num_const, alpha=args.alpha)
-        # f_loss = nw.CustomLoss2(args.num_const)
-    else:
-        print("MSE loss used")
+    if args.loss == "MSE":
+        print("MSE loss used with alpha: {}".format(args.alpha))
         loss_name = "MSELoss/"
-        f_loss = nn.MSELoss()
-        f_loss = nw.CustomMSELoss(num_const=args.num_const)
+        # f_loss = nn.MSELoss()
+        f_loss = nw.CustomMSELoss(alpha = args.alpha, num_const=args.num_const)
+    elif args.loss == "PCL":
+        print("PCL used with alpha: {}".format(args.alpha))
+        loss_name = "CustomLoss/"
+        f_loss = nw.PureCostLoss(alpha=args.alpha, num_const=args.num_const)
+    elif args.loss == "GCL":
+        print("GCL used with alpha: {}".format(args.alpha))
+        loss_name = "CustomLoss/"
+        f_loss = nw.GuidedCostLoss(alpha=args.alpha, num_const=args.num_const)
+
 
     #define optimizer
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
 
     #Make run directory
-    run_name = "runV{}C{}D{}CL{}-".format(
-        args.num_var, args.num_const, args.num_deep_layer, int(args.custom_loss))
+    run_name = "runV{}C{}D{}L{}-".format(
+        args.num_var, args.num_const, args.num_deep_layer, args.loss)
     run_dir_path, num_run = lw.generate_unique_dir(LOG_DIR, run_name)
 
     #setup model checkpoint
@@ -234,8 +238,8 @@ def main():
             log_dir=run_dir_path, filename_suffix=".log")
 
         #write short description of the run
-        run_desc = "Epoch{}V{}Cst{}CLoss{}Dlayer{}Alpha{}".format(
-            args.epoch, args.num_var, args.num_const, int(args.custom_loss), args.num_deep_layer, args.alpha)
+        run_desc = "Epoch{}V{}Cst{}Loss{}Dlayer{}Alpha{}".format(
+            args.epoch, args.num_var, args.num_const, args.loss, args.num_deep_layer, args.alpha)
         log_file_path = LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
 
         lw.summary_writer(run_dir_path, model, optimizer,
@@ -251,7 +255,7 @@ def main():
 
             #train
             train_loss, train_acc, train_cost, train_penalty = nw.train(
-                model, train_loader, f_loss, optimizer, device, custom_loss=args.custom_loss)
+                model, train_loader, f_loss, optimizer, device)
 
             progress(train_loss, train_acc, description="Trainning")
             time.sleep(0.5)
@@ -259,7 +263,7 @@ def main():
 
             #test
             val_loss, val_acc, val_cost, val_penalty, _ = nw.test(
-                model, test_loader, f_loss, device, custom_loss=args.custom_loss)
+                model, test_loader, f_loss, device)
 
             progress(val_loss, val_acc, description="Validation")
             # print("\n\n","Validation : Loss : {:.4f}, Acc : {:.4f}".format(
@@ -297,7 +301,7 @@ def main():
     print(DIEZ+" Final Test "+DIEZ)
 
     test_loss, test_acc, test_cost, test_penalty, example_text = nw.test(
-        model, test_loader, f_loss, device, custom_loss=args.custom_loss, final_test=True, num_const= args.num_const)
+        model, test_loader, f_loss, device, final_test=True, num_const= args.num_const)
     print("Test       : Loss : {:.4f}, Acc : {:.4f}".format(
         test_loss, test_acc))
     print("Test       : Cost : {:.4f}, Pen : {:.4f}".format(
