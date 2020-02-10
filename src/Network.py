@@ -11,15 +11,15 @@ EQUAL = "==============="
 
 
 class FullyConnectedRegularized(nn.Module):
-    def __init__(self, num_param, num_var, l2_reg=0, num_depth=0, dropout=False):
+    def __init__(self, num_param, num_var, num_depth=0, num_neur = 100, dropout=False):
         super(FullyConnectedRegularized, self).__init__()
 
-        self.l2_reg = l2_reg
+        # self.l2_reg = l2_reg
         self.num_param = num_param
 
         self.layer_list = []
-        fcIn = nn.Linear(num_param, 100)
-        fcOut = nn.Linear(100, num_var)
+        fcIn = nn.Linear(num_param, num_neur)
+        fcOut = nn.Linear(num_neur, num_var)
 
         if dropout:
             self.layer_list.append(nn.Dropout(0.2))
@@ -28,7 +28,7 @@ class FullyConnectedRegularized(nn.Module):
         if dropout:
             self.layer_list.append(nn.Dropout(0.5))
         for depth in range(num_depth):
-            self.layer_list.append(nn.Linear(100, 100))
+            self.layer_list.append(nn.Linear(num_neur, num_neur))
             self.layer_list.append(nn.ReLU())
 
         self.layer_list.append(fcOut)
@@ -105,7 +105,7 @@ def train(model, loader, f_loss, optimizer, device):
         loss.backward()
         # model.penalty().backward()
         optimizer.step()
-
+    # print("Tot penalty ", penalty/N)
     return tot_loss/N, correct/N, cost/N, penalty/N
 
 
@@ -175,7 +175,7 @@ def test(model, loader, f_loss, device, final_test=False, num_const=0):
             if final_test and i < MAX_SHOW:
                 example_text += print_costs(i, outputs,
                                             targets, inputs, num_const)
-
+    # print("Tot penalty ", penalty/N)
     return tot_loss/N, correct/N, cost/N, penalty/N, example_text
 
 
@@ -202,6 +202,13 @@ def print_costs(num, outputs, targets, inputs, num_const):
 
         output_penalty = (torch.clamp((torch.bmm(outputs.view(
             num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+
+        negative_penalty = nn.ReLU()(-outputs).sum(dim = 1).view(num_batch,1)
+
+        print(negative_penalty)
+        print(output_penalty)
+        output_penalty += negative_penalty
+
         A = a_const.transpose(2, 1)[0]
         B = b_const[0]
         C = inputs[:, -num_var:][0]
@@ -264,7 +271,7 @@ class CustomMSELoss():
         self.f_loss = nn.MSELoss()
         self.cost = 0.0
         self.penalty = 0.0
-        
+
 
     def get_info(self):
 
@@ -295,6 +302,8 @@ class CustomMSELoss():
         if self.alpha != 0:
             self.penalty, res = compute_penalty(
                 outputs, inputs, self.alpha, num_batch, self.num_const, num_var)
+            # print("Penalty ", self.penalty)
+
 
         return self.f_loss(outputs, targets) + res
 
@@ -340,6 +349,8 @@ class PureCostLoss():
             #     num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
             self.penalty, res = compute_penalty(
                 outputs, inputs, self.alpha, num_batch, self.num_const, num_var)
+            # print("Penalty ", self.penalty)
+
 
             result += res
 
@@ -380,6 +391,7 @@ class GuidedCostLoss():
         if self.alpha != 0:
             self.penalty, res = compute_penalty(
                 outputs, inputs, self.alpha, num_batch, self.num_const, num_var)
+            # print("Penalty ", self.penalty)
 
             result += res
 
@@ -395,4 +407,9 @@ def compute_penalty(outputs, inputs, alpha, num_batch, num_const, num_var):
 
     output_penalty = (torch.clamp((torch.bmm(outputs.view(
         num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
-    return abs(float(torch.mean((output_penalty)))),  torch.mean(output_penalty)*(alpha)
+    # print("input shape ", outputs.shape)
+    negative_penalty = nn.ReLU()(-outputs).sum(dim = 1).view(num_batch,1)
+    # print("negative_penalty ", negative_penalty)
+    # print("output penalty ", output_penalty)
+    # print("output penalty ", output_penalty + negative_penalty)
+    return abs(float(torch.mean(output_penalty + negative_penalty))),  torch.mean(output_penalty + negative_penalty)*(alpha)

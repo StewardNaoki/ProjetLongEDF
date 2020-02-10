@@ -115,6 +115,8 @@ def main():
                         help="Use of custom loss (default: MSE)")
     parser.add_argument("--num_deep_layer", type=int, default=1,
                         help="Number of deep layer used (default: 1)")
+    parser.add_argument("--num_neur", type=int, default=100,
+                        help="Number neurons in each layer (default: 100)")
     parser.add_argument("--alpha", type=float, default=0.0,
                         help="constraint penalty (default: 0.0)")
 
@@ -183,7 +185,7 @@ def main():
     else:
         print("Model with {} layers".format(args.num_deep_layer))
         model = nw.FullyConnectedRegularized(
-            num_param=num_param, num_var=args.num_var, num_depth=args.num_deep_layer, dropout=args.dropout)
+            num_param=num_param, num_var=args.num_var, num_depth=args.num_deep_layer,num_neur= args.num_neur, dropout=args.dropout)
 
     #print model info
     print("Network architechture:\n", model)
@@ -207,11 +209,11 @@ def main():
         f_loss = nw.CustomMSELoss(alpha = args.alpha, num_const=args.num_const)
     elif args.loss == "PCL":
         print("PCL used with alpha: {}".format(args.alpha))
-        loss_name = "CustomLoss/"
+        loss_name = "PCL/"
         f_loss = nw.PureCostLoss(alpha=args.alpha, num_const=args.num_const)
     elif args.loss == "GCL":
         print("GCL used with alpha: {}".format(args.alpha))
-        loss_name = "CustomLoss/"
+        loss_name = "GCL/"
         f_loss = nw.GuidedCostLoss(alpha=args.alpha, num_const=args.num_const)
 
 
