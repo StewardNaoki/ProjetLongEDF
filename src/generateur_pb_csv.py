@@ -17,7 +17,6 @@ def test_read(csv_file_name):
     # Y = np.asarray(eval(Y))
     # print(Y[0])
 
-
 def generate_csv(file_name, num_var, num_const, num_prob):
 
     print("Writing in: ", file_name)
