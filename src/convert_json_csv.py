@@ -8,6 +8,7 @@ import os
 
 
 PATH_DATA = "./../DATA/"
+OUTPUT_VECTOR_SIZE = 94
 
 def generate_csv(path_json_dir, input_file_path , num_json_max ):
     print("Opening json folder: ", path_json_dir)
@@ -16,6 +17,7 @@ def generate_csv(path_json_dir, input_file_path , num_json_max ):
     num_json = 0
     with tqdm(total=num_json_max) as pbar:
         for filename in os.listdir(path_json_dir):
+            # print("Filename: ",filename)
             if num_json >= num_json_max:
                 break
 
@@ -34,9 +36,9 @@ def generate_csv(path_json_dir, input_file_path , num_json_max ):
             vehicle_pmax.append(df['vehicle_pmax'][0])
             vehicle_energy_need.append(df['vehicle_energy_need'][0])
 
-            for i in range(94):
-                opt_charging_profile_step1.append(df['opt_charging_profile_step1'][i])
+            for i in range(OUTPUT_VECTOR_SIZE):
                 house_cons.append(df['house_cons'][i])
+                opt_charging_profile_step1.append(df['opt_charging_profile_step1'][i])
 
             dict_input["house_pmax"].append(house_pmax)
             dict_input["vehicle_pmax"].append(vehicle_pmax)

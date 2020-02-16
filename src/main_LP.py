@@ -16,7 +16,8 @@ import sys
 import csv
 
 
-import generateur_csv as g_csv
+import generateur_pb_csv as g_csv
+import loss_LP as loss
 import log_writer as lw
 import Dataset as ds
 import Network as nw
@@ -185,7 +186,7 @@ def main():
     else:
         print("Model with {} layers".format(args.num_deep_layer))
         model = nw.FullyConnectedRegularized(
-            num_param=num_param, num_var=args.num_var, num_depth=args.num_deep_layer,num_neur= args.num_neur, dropout=args.dropout)
+            num_in_param=num_param, num_out_var=args.num_var, num_depth=args.num_deep_layer,num_neur= args.num_neur, dropout=args.dropout)
 
     #print model info
     print("Network architechture:\n", model)
@@ -206,15 +207,15 @@ def main():
         print("MSE loss used with alpha: {}".format(args.alpha))
         loss_name = "MSELoss/"
         # f_loss = nn.MSELoss()
-        f_loss = nw.CustomMSELoss(alpha = args.alpha, num_const=args.num_const)
+        f_loss = loss.CustomMSELoss(alpha = args.alpha, num_const=args.num_const)
     elif args.loss == "PCL":
         print("PCL used with alpha: {}".format(args.alpha))
         loss_name = "PCL/"
-        f_loss = nw.PureCostLoss(alpha=args.alpha, num_const=args.num_const)
+        f_loss = loss.PureCostLoss(alpha=args.alpha, num_const=args.num_const)
     elif args.loss == "GCL":
         print("GCL used with alpha: {}".format(args.alpha))
         loss_name = "GCL/"
-        f_loss = nw.GuidedCostLoss(alpha=args.alpha, num_const=args.num_const)
+        f_loss = loss.GuidedCostLoss(alpha=args.alpha, num_const=args.num_const)
 
 
     #define optimizer
@@ -223,7 +224,8 @@ def main():
     #Make run directory
     run_name = "runV{}C{}D{}L{}-".format(
         args.num_var, args.num_const, args.num_deep_layer, args.loss)
-    run_dir_path, num_run = lw.generate_unique_dir(LOG_DIR, run_name)
+    LogManager = lw.LogManager(LOG_DIR,run_name)
+    run_dir_path, num_run = LogManager.generate_unique_dir()
 
     #setup model checkpoint
     path_model_check_point = run_dir_path + MODEL_DIR
@@ -238,14 +240,14 @@ def main():
         #generate unique folder for new run
         tensorboard_writer = SummaryWriter(
             log_dir=run_dir_path, filename_suffix=".log")
+        LogManager.set_tensorboard_writer(tensorboard_writer)
 
         #write short description of the run
         run_desc = "Epoch{}V{}Cst{}Loss{}Dlayer{}Alpha{}".format(
             args.epoch, args.num_var, args.num_const, args.loss, args.num_deep_layer, args.alpha)
-        log_file_path = LOG_DIR + "Run{}".format(num_run) + run_desc + ".log"
+        log_file_path = LOG_DIR  + run_desc + "Run{}".format(num_run) + ".log"
 
-        lw.summary_writer(run_dir_path, model, optimizer,
-                          tensorboard_writer, num_run)
+        LogManager.summary_writer(model,optimizer)
 
     last_update = 0
     start_time = time.time()
@@ -294,7 +296,7 @@ def main():
                     'val_penalty': val_penalty
                 }, t)
 
-                lw.write_log(log_file_path, val_acc,
+                LogManager.write_log(log_file_path, val_acc,
                              val_loss, train_acc, train_loss)
     total_run_time = time.time() - start_time
     print("--- %s seconds ---" % (total_run_time))
@@ -310,10 +312,9 @@ def main():
         test_cost, test_penalty))
 
     if args.log:
-        lw.end_summary_witer(run_dir_path, total_run_time, test_loss,
-                             test_acc, test_cost, test_penalty, tensorboard_writer, num_run)
-        lw.write_examples(run_dir_path, example_text,
-                          tensorboard_writer, num_run)
+        LogManager.end_summary_witer(total_run_time, test_loss,
+                             test_acc, test_cost, test_penalty)
+        LogManager.write_examples(example_text)
         tensorboard_writer.close()
 
 
