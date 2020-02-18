@@ -49,7 +49,7 @@ class EDF_data(Dataset):
         X += house_pmax
         X += vehicule_pmax
         X += vehicule_energy_need
-        print(len(house_cons))
+        # print(len(house_cons))
         # i= 0
         for x in house_cons:
             # print(i)
@@ -63,8 +63,8 @@ class EDF_data(Dataset):
         label = self.data_frame["opt_charging_profile_step1"].iloc[idx]
         label = np.asarray(eval(label))
 
-        print(X.shape)
-        print(label.shape)
+        # print(X.shape)
+        # print(label.shape)
 
         sample = {'X': X, 'label': label}
 

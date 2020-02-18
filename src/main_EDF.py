@@ -231,7 +231,7 @@ def main():
     #Make run directory
     run_name = "runV{}D{}L{}-".format(
         args.num_in_var, args.num_deep_layer, args.loss)
-    LogManager = lw.LogManager(LOG_DIR,run_name)
+    LogManager = lw.EDF_Log(LOG_DIR,run_name)
     run_dir_path, num_run = LogManager.generate_unique_dir()
 
     #setup model checkpoint
@@ -273,7 +273,7 @@ def main():
             # print(args.custom_loss)
 
             #test
-            val_loss, val_acc, val_cost, val_penalty, _ = nw.test(
+            val_loss, val_acc, val_cost, val_penalty= nw.test(
                 model, test_loader, f_loss, device)
 
             progress(val_loss, val_acc, description="Validation")
@@ -308,22 +308,21 @@ def main():
     total_run_time = time.time() - start_time
     print("--- %s seconds ---" % (total_run_time))
 
-    # model.load_state_dict(torch.load(path_model_check_point + BEST_MODELE))
-    # print(DIEZ+" Final Test "+DIEZ)
+    model.load_state_dict(torch.load(path_model_check_point + BEST_MODELE))
+    print(DIEZ+" Final Test "+DIEZ)
 
-    # test_loss, test_acc, test_cost, test_penalty, example_text = nw.test(
-    #     model, test_loader, f_loss, device, final_test=True, num_const= args.num_const)
-    # print("Test       : Loss : {:.4f}, Acc : {:.4f}".format(
-    #     test_loss, test_acc))
-    # print("Test       : Cost : {:.4f}, Pen : {:.4f}".format(
-    #     test_cost, test_penalty))
+    test_loss, test_acc, test_cost, test_penalty = nw.test(
+        model, test_loader, f_loss, device, final_test=True, log_manager=LogManager)
+    print("Test       : Loss : {:.4f}, Acc : {:.4f}".format(
+        test_loss, test_acc))
+    print("Test       : Cost : {:.4f}, Pen : {:.4f}".format(
+        test_cost, test_penalty))
 
-    # if args.log:
-    #     lw.end_summary_witer(run_dir_path, total_run_time, test_loss,
-    #                          test_acc, test_cost, test_penalty, tensorboard_writer, num_run)
-    #     lw.write_examples(run_dir_path, example_text,
-    #                       tensorboard_writer, num_run)
-    #     tensorboard_writer.close()
+    if args.log:
+        LogManager.end_summary_witer(total_run_time, test_loss,
+                             test_acc, test_cost, test_penalty)
+        LogManager.write_examples()
+        tensorboard_writer.close()
 
 
 if __name__ == "__main__":

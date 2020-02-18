@@ -224,7 +224,7 @@ def main():
     #Make run directory
     run_name = "runV{}C{}D{}L{}-".format(
         args.num_var, args.num_const, args.num_deep_layer, args.loss)
-    LogManager = lw.LogManager(LOG_DIR,run_name)
+    LogManager = lw.LP_Log(LOG_DIR,run_name, num_const= args.num_const)
     run_dir_path, num_run = LogManager.generate_unique_dir()
 
     #setup model checkpoint
@@ -266,7 +266,7 @@ def main():
             # print(args.custom_loss)
 
             #test
-            val_loss, val_acc, val_cost, val_penalty, _ = nw.test(
+            val_loss, val_acc, val_cost, val_penalty = nw.test(
                 model, test_loader, f_loss, device)
 
             progress(val_loss, val_acc, description="Validation")
@@ -304,8 +304,8 @@ def main():
     model.load_state_dict(torch.load(path_model_check_point + BEST_MODELE))
     print(DIEZ+" Final Test "+DIEZ)
 
-    test_loss, test_acc, test_cost, test_penalty, example_text = nw.test(
-        model, test_loader, f_loss, device, final_test=True, num_const= args.num_const)
+    test_loss, test_acc, test_cost, test_penalty = nw.test(
+        model, test_loader, f_loss, device, final_test=True, log_manager= LogManager)
     print("Test       : Loss : {:.4f}, Acc : {:.4f}".format(
         test_loss, test_acc))
     print("Test       : Cost : {:.4f}, Pen : {:.4f}".format(
@@ -314,7 +314,7 @@ def main():
     if args.log:
         LogManager.end_summary_witer(total_run_time, test_loss,
                              test_acc, test_cost, test_penalty)
-        LogManager.write_examples(example_text)
+        LogManager.write_examples()
         tensorboard_writer.close()
 
 

@@ -5,6 +5,12 @@ import os
 import sys
 import csv
 import pandas as pd
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import transforms
+
 
 style.use("ggplot")
 # MAX_TIME = 1000000
@@ -14,7 +20,8 @@ class LogManager:
         self.logdir = logdir
         self.raw_run_name = raw_run_name
         self.run_num = 0
-    
+        self.example_text = ""
+
     def set_tensorboard_writer(self, tensorboard_writer):
         self.tensorboard_writer = tensorboard_writer
 
@@ -91,11 +98,11 @@ class LogManager:
         ax2.legend(loc=2)
         plt.show()
 
-    def write_examples(self,example_text):
+    def write_examples(self):
         example_file = open(self.run_dir_path + "/examples.txt", 'w')
-        example_file.write(example_text)
+        example_file.write(self.example_text)
         example_file.close()
-        self.tensorboard_writer.add_text("Run {} Example".format(self.run_num), example_text)
+        self.tensorboard_writer.add_text("Run {} Example".format(self.run_num), self.example_text)
 
     def summary_writer(self,model, optimizer):
 
@@ -147,40 +154,173 @@ class LogManager:
         self.tensorboard_writer.add_text("Run {} Summary".format(self.run_num), summary_text)
 
 
-def plot_writer(outputs, targets, inputs):
-    n = min(15, len(outputs))
-    output_pve = outputs[:n, :].tolist()
-    target_pve = targets[:n, :].tolist()
-    house_cons = inputs[:n, 3:].tolist()
-    # output_pve = outputs[:n, :]
-    # target_pve = targets[:n, :]
-    # house_cons = inputs[:n, 3:]
-    # print(output_pve)
-    # print(target_pve)
-    # print(house_cons)
-    dict_csv = {"output_pve": [], "target_pve": [], "house_cons": []}
-    for k in range(n):
-        dict_csv["output_pve"].append(output_pve[k][:])
-        dict_csv["target_pve"].append(target_pve[k][:])
-        dict_csv["house_cons"].append(house_cons[k][:])
-    df_csv = pd.DataFrame(dict_csv)
-    print(df_csv.head())
-    df_csv.to_csv('test.csv', index=False)
+    def plot_writer(self, outputs, targets, inputs):
+        image_folder = self.run_dir_path + "images/"
+        if not os.path.isdir(image_folder):
+            os.mkdir(image_folder)
+        n = min(15, len(outputs))
+        output_pve = outputs[:n, :].tolist()
+        target_pve = targets[:n, :].tolist()
+        house_cons = inputs[:n, 3:].tolist()
+        # output_pve = outputs[:n, :]
+        # target_pve = targets[:n, :]
+        # house_cons = inputs[:n, 3:]
+        # print(output_pve)
+        # print(target_pve)
+        # print(house_cons)
+        dict_csv = {"output_pve": [], "target_pve": [], "house_cons": []}
+        for k in range(n):
+            dict_csv["output_pve"].append(output_pve[k][:])
+            dict_csv["target_pve"].append(target_pve[k][:])
+            dict_csv["house_cons"].append(house_cons[k][:])
+            fig = plt.figure()
+            plt.plot(output_pve[k][:])
+            plt.plot(target_pve[k][:])
+            plt.plot(house_cons[k][:])
+            plt.title('Courbe{}'.format(k))
+            plt.savefig(image_folder +'Courbe{}.png'.format(k), bbox_inches='tight')
+            im = cv2.imread(image_folder +'Courbe{}.png'.format(k))
+            im = im.transpose((2, 0, 1))
+            self.tensorboard_writer.add_image("Run {} Results".format(self.run_num), im)
+        df_csv = pd.DataFrame(dict_csv)
+        print(df_csv.head())
+        df_csv.to_csv(self.run_dir_path + 'courbes.csv', index=False)
 
-def plot_reader():
-    data_frame = pd.read_csv('test.csv')
-    # print(data_frame.head())
-    output_pve = data_frame["output_pve"].iloc[1]
-    target_pve = data_frame["target_pve"].iloc[1]
-    house_cons = data_frame["house_cons"].iloc[1]
-    # print(type(output_pve))
-    # print(target_pve)
-    # print(house_cons)
-    for k in range(data_frame.shape[0]):
-        output_pve = eval(data_frame["output_pve"].iloc[k])
-        target_pve = eval(data_frame["target_pve"].iloc[k])
-        house_cons = eval(data_frame["house_cons"].iloc[k])
-        for i in range(len(output_pve)):
-            print(output_pve[i])
-            print(target_pve[i])
-            print(house_cons[i])
+# def plot_reader():
+#     data_frame = pd.read_csv('test.csv')
+#     # print(data_frame.head())
+#     output_pve = data_frame["output_pve"].iloc[1]
+#     target_pve = data_frame["target_pve"].iloc[1]
+#     house_cons = data_frame["house_cons"].iloc[1]
+#     # print(type(output_pve))
+#     # print(target_pve)
+#     # print(house_cons)
+#     for k in range(data_frame.shape[0]):
+#         output_pve = eval(data_frame["output_pve"].iloc[k])
+#         target_pve = eval(data_frame["target_pve"].iloc[k])
+#         house_cons = eval(data_frame["house_cons"].iloc[k])
+#         for i in range(len(output_pve)):
+#             print(output_pve[i])
+#             print(target_pve[i])
+#             print(house_cons[i])
+
+
+class LP_Log(LogManager):
+    def __init__(self, logdir, raw_run_name, num_const = 0):
+        super().__init__(logdir, raw_run_name)
+        self.num_const = num_const
+
+    def write_example(self, num, outputs, targets, inputs):
+
+        num_batch = outputs.shape[0]
+        num_var = outputs.shape[1]
+        output_cost = torch.bmm(outputs.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+        target_cost = torch.bmm(targets.view(
+            num_batch, 1, num_var), inputs[:, -num_var:].view(num_batch, num_var, 1))
+
+        a_const = inputs[:, :-self.num_const -
+                         num_var].view(num_batch, self.num_const, num_var).transpose(2, 1)
+        b_const = inputs[:, -self.num_const -
+                         num_var:-num_var].view(num_batch, 1, -1)
+
+        output_penalty = (torch.clamp((torch.bmm(outputs.view(
+            num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
+
+        negative_penalty = nn.ReLU()(-outputs).sum(dim = 1).view(num_batch,1)
+
+        # print(negative_penalty)
+        # print(output_penalty)
+        output_penalty += negative_penalty
+
+        A = (a_const.transpose(2, 1)[0]).tolist()
+        B = (b_const[0]).tolist()
+        C = (inputs[:, -num_var:][0]).tolist()
+
+        # print(inputs)
+        # print(inputs.shape)
+
+        # print(output_cost.shape)
+        # print("targets cost: ", -1*float(target_cost[0]))# ne pas oublier les -1
+        # print("outputs cost: ", -1*float(output_cost[0]))
+        # print("targets: ", targets[0])
+        # print("outputs: ", outputs[0])
+        # print("\n\n")
+
+        txt= """Example {}
+===============
+
+Problem
+===============
+A: {}
+
+
+B: {}
+
+
+C: {}
+
+Costs
+===============
+targets cost: {}
+
+
+output cost: {}
+
+
+Penalty
+===============
+output penalty: {}
+
+
+Vector
+===============
+targets vector: {}
+
+
+output vector: {}
+
+
+""".format(num, A, B, C, float(target_cost[0]), float(output_cost[0]), output_penalty[0].tolist(), targets[0].tolist(), outputs[0].tolist())
+        self.example_text += txt
+        print("example_text: ", txt)
+
+        # return example_text
+
+
+class EDF_Log(LogManager):
+    def __init__(self, logdir, raw_run_name):
+        super().__init__(logdir, raw_run_name)
+
+    def write_example(self, num, outputs, targets, inputs):
+        num_batch = outputs.shape[0]
+        house_cons = inputs[:,3:]
+        # loss = torch.mean(((torch.max(house_cons + outputs, 1)[0]) - (torch.max(house_cons + targets, 1)[0]))**2)
+        output_cost = torch.max(house_cons + outputs, 1)[0]
+        target_cost = torch.max(house_cons + targets, 1)[0]
+        output_penalty = [0]
+
+        txt = """Example {}
+===============
+
+Problem
+===============
+
+
+Costs
+===============
+targets cost: {}
+
+
+output cost: {}
+
+
+Penalty
+===============
+output penalty: {}
+
+
+""".format(num, float(target_cost[0]), float(output_cost[0]), output_penalty[0])
+        self.example_text += txt
+        print("example_text: ", txt)
+

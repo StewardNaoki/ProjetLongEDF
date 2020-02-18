@@ -114,7 +114,7 @@ def train(model, loader, f_loss, optimizer, device):
     return tot_loss/N, correct/N, cost/N, penalty/N
 
 
-def test(model, loader, f_loss, device, final_test=False, num_const=0):
+def test(model, loader, f_loss, device, final_test=False, log_manager = None):
     """Test a model by iterating over the loader
 
     Arguments :
@@ -178,9 +178,10 @@ def test(model, loader, f_loss, device, final_test=False, num_const=0):
             correct += (predicted_targets == targets).sum().item()
 
             if final_test and i < MAX_SHOW:
-                example_text += lossLP.print_costs(i, outputs,
-                                            targets, inputs, num_const)
+                # example_text += lossLP.print_costs(i, outputs,
+                #                             targets, inputs, num_const)
+                log_manager.write_example(i, outputs, targets, inputs)
     # print("Tot penalty ", penalty/N)
-    return tot_loss/N, correct/N, cost/N, penalty/N, example_text
+    return tot_loss/N, correct/N, cost/N, penalty/N
 
 
