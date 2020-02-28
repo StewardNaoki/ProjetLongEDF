@@ -44,14 +44,14 @@ def generate_csv(path_json_dir, input_file_path , num_json_max ):
             dict_input["vehicle_pmax"].append(vehicle_pmax)
             dict_input["vehicle_energy_need"].append(vehicle_energy_need)
 
-            ### C
             dict_input["house_cons"].append(house_cons)
             ### Solution
             dict_input["opt_charging_profile_step1"].append(opt_charging_profile_step1)
 
             num_json+= 1
-        df_input = pd.DataFrame(dict_input)
-        df_input.to_csv(input_file_path, index=False)
+    # print(dict_input.head())
+    df_input = pd.DataFrame(dict_input)
+    df_input.to_csv(input_file_path, index=False)
 
 
 

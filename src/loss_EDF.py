@@ -108,7 +108,7 @@ class GuidedCostLoss():
         # print("cost diff: ", self.cost_diff)
         # print("const penalty: ", self.const_penalty)
         return self.cost, self.penalty
-        self.penalty = 0.0
+        # self.penalty = 0.0
 
     def __call__(self, outputs, targets, inputs):
         # loss = self.f_loss(outputs, targets) +

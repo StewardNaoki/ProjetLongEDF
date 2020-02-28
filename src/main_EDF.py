@@ -113,8 +113,8 @@ def main():
                         help="Maximum number of json file to load in csv (default: 10)")
     parser.add_argument("--path_json_dir", type=str, default="./../DATA/json_data/",
                         help="Path to json files (default: ./../DATA/json_data/")
-    parser.add_argument("--num_in_var", type=int, default=OUTPUT_VECTOR_SIZE +3,
-                        help="Number of input variables (default: 95 + 3)")
+    parser.add_argument("--num_in_var", type=int, default=OUTPUT_VECTOR_SIZE +1,
+                        help="Number of input variables (default: 94 + 1)")
     # parser.add_argument("--num_const", type=int, default=8,
     #                     help="number of constrains (default: 8)")
     # parser.add_argument("--num_prob", type=int, default=10,
@@ -182,6 +182,8 @@ def main():
     #     i += 1
     #     print("input:\n", inputs)
     #     print("target:\n", targets)
+        
+    # assert(False)
     #print info
     print("Size of input variables: ", args.num_in_var)
     # print("number of const: ", args.num_const)
@@ -193,7 +195,7 @@ def main():
     else:
         print("Model with {} layers".format(args.num_deep_layer))
         model = nw.FullyConnectedRegularized(
-            num_in_param=OUTPUT_VECTOR_SIZE + 3 , num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer,num_neur= args.num_neur, dropout=args.dropout)
+            num_in_param=OUTPUT_VECTOR_SIZE + 1 , num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer,num_neur= args.num_neur, dropout=args.dropout)
 
     #print model info
     print("Network architechture:\n", model)
@@ -231,6 +233,8 @@ def main():
     #Make run directory
     run_name = "runV{}D{}L{}-".format(
         args.num_in_var, args.num_deep_layer, args.loss)
+
+    #Create LogManager
     LogManager = lw.EDF_Log(LOG_DIR,run_name)
     run_dir_path, num_run = LogManager.generate_unique_dir()
 

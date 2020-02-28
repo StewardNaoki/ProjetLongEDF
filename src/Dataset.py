@@ -6,6 +6,10 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from torchvision import transforms
 
+P_MIN = 1200
+P_MAX = 7000
+HOUSE_MAX = 9000
+V_MAX = 40000
 
 class EDF_data(Dataset):
 
@@ -28,11 +32,11 @@ class EDF_data(Dataset):
 
         # print(self.data_frame.head())
 
-        house_pmax = self.data_frame["house_pmax"].iloc[idx]
-        house_pmax = eval(house_pmax)
+        # house_pmax = self.data_frame["house_pmax"].iloc[idx]
+        # house_pmax = eval(house_pmax)
 
-        vehicule_pmax = self.data_frame["vehicle_pmax"].iloc[idx]
-        vehicule_pmax = eval(vehicule_pmax)
+        # vehicule_pmax = self.data_frame["vehicle_pmax"].iloc[idx]
+        # vehicule_pmax = eval(vehicule_pmax)
 
         vehicule_energy_need = self.data_frame["vehicle_energy_need"].iloc[idx]
         vehicule_energy_need = eval(vehicule_energy_need)
@@ -46,25 +50,24 @@ class EDF_data(Dataset):
         # print("house_cons", house_cons)
 
         X = []
-        X += house_pmax
-        X += vehicule_pmax
-        X += vehicule_energy_need
+        # X += house_pmax
+        # X += vehicule_pmax
+        X += [(vehicule_energy_need[0] / V_MAX)]
         # print(len(house_cons))
         # i= 0
         for x in house_cons:
             # print(i)
-            X.append(x)
+            X.append(x/HOUSE_MAX)
 
         X = np.asarray(X)
 
         # print(X)
-
-
         label = self.data_frame["opt_charging_profile_step1"].iloc[idx]
         label = np.asarray(eval(label))
+        label = (label - P_MIN)/(P_MAX - P_MIN)
 
-        # print(X.shape)
-        # print(label.shape)
+        # print("X shape ", X.shape)
+        # print("label shape ",label.shape)
 
         sample = {'X': X, 'label': label}
 

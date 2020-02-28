@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import transforms
+import cv2
 
 
 style.use("ggplot")
@@ -154,37 +155,7 @@ class LogManager:
         self.tensorboard_writer.add_text("Run {} Summary".format(self.run_num), summary_text)
 
 
-    def plot_writer(self, outputs, targets, inputs):
-        image_folder = self.run_dir_path + "images/"
-        if not os.path.isdir(image_folder):
-            os.mkdir(image_folder)
-        n = min(15, len(outputs))
-        output_pve = outputs[:n, :].tolist()
-        target_pve = targets[:n, :].tolist()
-        house_cons = inputs[:n, 3:].tolist()
-        # output_pve = outputs[:n, :]
-        # target_pve = targets[:n, :]
-        # house_cons = inputs[:n, 3:]
-        # print(output_pve)
-        # print(target_pve)
-        # print(house_cons)
-        dict_csv = {"output_pve": [], "target_pve": [], "house_cons": []}
-        for k in range(n):
-            dict_csv["output_pve"].append(output_pve[k][:])
-            dict_csv["target_pve"].append(target_pve[k][:])
-            dict_csv["house_cons"].append(house_cons[k][:])
-            fig = plt.figure()
-            plt.plot(output_pve[k][:])
-            plt.plot(target_pve[k][:])
-            plt.plot(house_cons[k][:])
-            plt.title('Courbe{}'.format(k))
-            plt.savefig(image_folder +'Courbe{}.png'.format(k), bbox_inches='tight')
-            im = cv2.imread(image_folder +'Courbe{}.png'.format(k))
-            im = im.transpose((2, 0, 1))
-            self.tensorboard_writer.add_image("Run {} Results".format(self.run_num), im)
-        df_csv = pd.DataFrame(dict_csv)
-        print(df_csv.head())
-        df_csv.to_csv(self.run_dir_path + 'courbes.csv', index=False)
+
 
 # def plot_reader():
 #     data_frame = pd.read_csv('test.csv')
@@ -292,9 +263,43 @@ class EDF_Log(LogManager):
     def __init__(self, logdir, raw_run_name):
         super().__init__(logdir, raw_run_name)
 
+
+    def plot_writer(self, outputs, targets, inputs):
+        image_folder = self.run_dir_path + "/images/"
+        if not os.path.isdir(image_folder):
+            os.mkdir(image_folder)
+        n = min(15, len(outputs))
+        output_pve = outputs[:n, :].tolist()
+        target_pve = targets[:n, :].tolist()
+        house_cons = inputs[:n, 1:].tolist()
+        # output_pve = outputs[:n, :]
+        # target_pve = targets[:n, :]
+        # house_cons = inputs[:n, 3:]
+        # print(output_pve)
+        # print(target_pve)
+        # print(house_cons)
+        dict_csv = {"output_pve": [], "target_pve": [], "house_cons": []}
+        for k in range(n):
+            dict_csv["output_pve"].append(output_pve[k][:])
+            dict_csv["target_pve"].append(target_pve[k][:])
+            dict_csv["house_cons"].append(house_cons[k][:])
+            fig = plt.figure()
+            plt.plot(output_pve[k][:], label = "output_pve")
+            plt.plot(target_pve[k][:], label = "target_pve")
+            plt.plot(house_cons[k][:], label = "house_cons")
+            plt.title('Courbe{}'.format(k))
+            plt.legend()
+            plt.savefig(image_folder +'Courbe{}.png'.format(k), bbox_inches='tight')
+            im = cv2.imread(image_folder +'Courbe{}.png'.format(k))
+            im = im.transpose((2, 0, 1))
+            self.tensorboard_writer.add_image("Run {} Results".format(self.run_num), im)
+        df_csv = pd.DataFrame(dict_csv)
+        print(df_csv.head())
+        df_csv.to_csv(self.run_dir_path + 'courbes.csv', index=False)
+
     def write_example(self, num, outputs, targets, inputs):
         num_batch = outputs.shape[0]
-        house_cons = inputs[:,3:]
+        house_cons = inputs[:,1:]
         # loss = torch.mean(((torch.max(house_cons + outputs, 1)[0]) - (torch.max(house_cons + targets, 1)[0]))**2)
         output_cost = torch.max(house_cons + outputs, 1)[0]
         target_cost = torch.max(house_cons + targets, 1)[0]
@@ -323,4 +328,7 @@ output penalty: {}
 """.format(num, float(target_cost[0]), float(output_cost[0]), output_penalty[0])
         self.example_text += txt
         print("example_text: ", txt)
+        self.plot_writer(outputs, targets, inputs)
+
+
 
