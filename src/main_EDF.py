@@ -108,18 +108,17 @@ def main():
     parser.add_argument("--dropout", default=False, action='store_true',
                         help="Activate or not dropout")
 
-
     parser.add_argument("--num_json_max", type=int, default=10,
                         help="Maximum number of json file to load in csv (default: 10)")
     parser.add_argument("--path_json_dir", type=str, default="./../DATA/json_data/",
                         help="Path to json files (default: ./../DATA/json_data/")
-    parser.add_argument("--num_in_var", type=int, default=OUTPUT_VECTOR_SIZE +1,
+    parser.add_argument("--num_in_var", type=int, default=OUTPUT_VECTOR_SIZE + 1,
                         help="Number of input variables (default: 94 + 1)")
     # parser.add_argument("--num_const", type=int, default=8,
     #                     help="number of constrains (default: 8)")
     # parser.add_argument("--num_prob", type=int, default=10,
     #                     help="number of problems to generate (default: 10)")
-    parser.add_argument("--loss", type = str, default="MSE",
+    parser.add_argument("--loss", type=str, default="MSE",
                         help="Use of custom loss (default: MSE)")
     parser.add_argument("--num_deep_layer", type=int, default=1,
                         help="Number of deep layer used (default: 1)")
@@ -127,6 +126,8 @@ def main():
                         help="Number neurons in each layer (default: 128)")
     parser.add_argument("--alpha", type=float, default=0.0,
                         help="constraint penalty (default: 0.0)")
+    parser.add_argument("--beta", type=float, default=0.0,
+                        help="need penalty (default: 0.0)")
 
     args = parser.parse_args()
 
@@ -174,7 +175,6 @@ def main():
                              shuffle=True,
                              num_workers=args.num_threads)
 
-
     # i = 0
     # for (inputs, targets) in train_loader:
     #     if i > 10:
@@ -182,7 +182,7 @@ def main():
     #     i += 1
     #     print("input:\n", inputs)
     #     print("target:\n", targets)
-        
+
     # assert(False)
     #print info
     print("Size of input variables: ", args.num_in_var)
@@ -195,7 +195,7 @@ def main():
     else:
         print("Model with {} layers".format(args.num_deep_layer))
         model = nw.FullyConnectedRegularized(
-            num_in_param=OUTPUT_VECTOR_SIZE + 1 , num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer,num_neur= args.num_neur, dropout=args.dropout)
+            num_in_param=OUTPUT_VECTOR_SIZE + 1, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
 
     #print model info
     print("Network architechture:\n", model)
@@ -216,26 +216,25 @@ def main():
         print("MSE loss used with alpha: {}".format(args.alpha))
         loss_name = "MSELoss/"
         # f_loss = nn.MSELoss()
-        f_loss = loss.CustomMSELoss(alpha = args.alpha)
+        f_loss = loss.CustomMSELoss(alpha=args.alpha, beta= args.beta)
     elif args.loss == "PCL":
         print("PCL used with alpha: {}".format(args.alpha))
         loss_name = "PCL/"
-        f_loss = loss.PureCostLoss(alpha=args.alpha)
+        f_loss = loss.PureCostLoss(alpha=args.alpha, beta= args.beta)
     elif args.loss == "GCL":
         print("GCL used with alpha: {}".format(args.alpha))
         loss_name = "GCL/"
-        f_loss = loss.GuidedCostLoss(alpha=args.alpha)
-
+        f_loss = loss.GuidedCostLoss(alpha=args.alpha, beta= args.beta)
 
     #define optimizer
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
 
     #Make run directory
-    run_name = "runV{}D{}L{}-".format(
-        args.num_in_var, args.num_deep_layer, args.loss)
+    run_name = "runV{}D{}L{}A{}-".format(
+        args.num_in_var, args.num_deep_layer, args.loss, args.alpha)
 
     #Create LogManager
-    LogManager = lw.EDF_Log(LOG_DIR,run_name)
+    LogManager = lw.EDF_Log(LOG_DIR, run_name)
     run_dir_path, num_run = LogManager.generate_unique_dir()
 
     #setup model checkpoint
@@ -254,11 +253,11 @@ def main():
         LogManager.set_tensorboard_writer(tensorboard_writer)
 
         #write short description of the run
-        run_desc = "Epoch{}V{}Loss{}Dlayer{}Alpha{}".format(
+        run_desc = "Epoch{}V{}Dlayer{}Loss{}Alpha{}".format(
             args.epoch, args.num_in_var, args.loss, args.num_deep_layer, args.alpha)
-        log_file_path = LOG_DIR  + run_desc + "Run{}".format(num_run) + ".log"
+        log_file_path = LOG_DIR + run_desc + "Run{}".format(num_run) + ".log"
 
-        LogManager.summary_writer(model,optimizer)
+        LogManager.summary_writer(model, optimizer)
 
     last_update = 0
     start_time = time.time()
@@ -277,7 +276,7 @@ def main():
             # print(args.custom_loss)
 
             #test
-            val_loss, val_acc, val_cost, val_penalty= nw.test(
+            val_loss, val_acc, val_cost, val_penalty = nw.test(
                 model, test_loader, f_loss, device)
 
             progress(val_loss, val_acc, description="Validation")
@@ -308,7 +307,7 @@ def main():
                 }, t)
 
                 LogManager.write_log(log_file_path, val_acc,
-                             val_loss, train_acc, train_loss)
+                                     val_loss, train_acc, train_loss)
     total_run_time = time.time() - start_time
     print("--- %s seconds ---" % (total_run_time))
 
@@ -324,7 +323,7 @@ def main():
 
     if args.log:
         LogManager.end_summary_witer(total_run_time, test_loss,
-                             test_acc, test_cost, test_penalty)
+                                     test_acc, test_cost, test_penalty)
         LogManager.write_examples()
         tensorboard_writer.close()
 

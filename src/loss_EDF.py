@@ -20,7 +20,7 @@ def print_costs(num, outputs, targets, inputs, num_const):
         """
         example_text = ""
         num_batch = outputs.shape[0]
-        house_cons = inputs[:,3:]
+        house_cons = inputs[:, 3:]
         # loss = torch.mean(((torch.max(house_cons + outputs, 1)[0]) - (torch.max(house_cons + targets, 1)[0]))**2)
         output_cost = torch.max(house_cons + outputs, 1)[0]
         target_cost = torch.max(house_cons + targets, 1)[0]
@@ -52,10 +52,9 @@ output penalty: {}
         return example_text
 
 
-
 class CustomMSELoss():
 
-    def __init__(self,alpha = 0, beta = 0):
+    def __init__(self, alpha=0, beta=0):
         self.alpha = alpha
         self.beta = beta
         self.f_loss = nn.MSELoss()
@@ -70,12 +69,14 @@ class CustomMSELoss():
     def __call__(self, outputs, targets, inputs):
         loss = self.f_loss(outputs, targets)
         self.cost = float(loss)
-        self.penalty, res = compute_penalty(outputs, inputs, self.alpha, self.beta)
+        self.penalty, res = compute_penalty(
+            outputs, inputs, self.alpha, self.beta)
         return loss + res
+
 
 class PureCostLoss():
 
-    def __init__(self,alpha = 0, beta = 0):
+    def __init__(self, alpha=0, beta=0):
         self.alpha = alpha
         self.beta = beta
         # self.f_loss = nn.MSELoss()
@@ -89,18 +90,23 @@ class PureCostLoss():
 
     def __call__(self, outputs, targets, inputs):
         # loss = self.f_loss(outputs, targets) +
-        house_cons = inputs[:,3:]
+        house_cons = inputs[:, 3:]
         # compute_penalty(outputs, inputs, self.alpha, self.beta)
         loss = torch.mean(torch.max(house_cons + outputs, 1)[0])
         self.cost = float(loss)
-        self.penalty, res = compute_penalty(outputs, inputs, self.alpha, self.beta)
+        self.penalty, res = compute_penalty(
+            outputs, inputs, self.alpha, self.beta)
         return loss + res
+
 
 class GuidedCostLoss():
 
-    def __init__(self,alpha = 0, beta = 0):
+    def __init__(self, alpha=0, beta=0):
         self.alpha = alpha
-        self.beta = beta
+        if beta == 0:
+            self.beta = alpha
+        else:
+            self.beta = beta
         # self.f_loss = nn.MSELoss()
         self.cost = 0.0
 
@@ -112,28 +118,26 @@ class GuidedCostLoss():
 
     def __call__(self, outputs, targets, inputs):
         # loss = self.f_loss(outputs, targets) +
-        house_cons = inputs[:,3:]
+        house_cons = inputs[:, 3:]
         # compute_penalty(outputs, inputs, self.alpha, self.beta)
         # output_cost = (torch.max(house_cons + outputs, 1)[0]).sum()
         # target_cost = (torch.max(house_cons + targets, 1)[0]).sum()
-        loss = torch.mean(((torch.max(house_cons + outputs, 1)[0]) - (torch.max(house_cons + targets, 1)[0]))**2)
+        loss = torch.mean(((torch.max(house_cons + outputs, 1)
+                            [0]) - (torch.max(house_cons + targets, 1)[0]))**2)
         self.cost = float(loss)
-        self.penalty, res = compute_penalty(outputs, inputs, self.alpha, self.beta)
+        self.penalty, res = compute_penalty(
+            outputs, inputs, self.alpha, self.beta)
         return loss + res
-
-
-
 
 
 def compute_penalty(outputs, inputs, alpha, beta):
     pve = outputs
-    pmax = inputs[:,1]
-    need = inputs[:,2]
+    pmax = inputs[:, 1]
+    need = inputs[:, 2]
     delta_t = 10
     relu = nn.ReLU()
     p1 = (relu((pve.t() - pmax).t())).sum() + (relu(-pve)).sum()
-    p2 = ((need - (delta_t * pve).sum(dim = 1))**2).sum()
+    p2 = ((need - (delta_t * pve).sum(dim=1))**2).sum()
     penalty = alpha*p1 + beta*p2
 
     return float(penalty), penalty
-

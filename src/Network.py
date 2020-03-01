@@ -77,8 +77,8 @@ def train(model, loader, f_loss, optimizer, device):
     for i, (inputs, targets) in enumerate(loader):
         # pbar.update(1)
         # pbar.set_description("Training step {}".format(i))
-        print("input shape: ", inputs.shape)
-        print("target shape: ", targets.shape)
+        # print("input shape: ", inputs.shape)
+        # print("target shape: ", targets.shape)
 
         inputs, targets = inputs.to(device), targets.to(device)
 
@@ -178,6 +178,7 @@ def test(model, loader, f_loss, device, final_test=False, log_manager = None):
             correct += (predicted_targets == targets).sum().item()
 
             if final_test and i < MAX_SHOW:
+                # print("Final test, ",i)
                 # example_text += lossLP.print_costs(i, outputs,
                 #                             targets, inputs, num_const)
                 log_manager.write_example(i, outputs, targets, inputs)
