@@ -7,13 +7,13 @@
 - *DATA/*: Contient Les différentes données
 
 ## Description des ficiers scources
-Préparation et conversion de données:
+### Préparation et conversion de données:
 
 - *convert_json_csv.py*: Conversion des .json en fichier .csv (Problème EDF)
 - *generate_pb_csv.py*: generateur de problèmes LP (Problème LP)
 - *Dataset*: Prépare le générateurs de données pour l'entraînement
 
-Entrainement du réseau:
+### Entrainement du réseau:
 - *Network.py*: Fichier gérant l'entraînemenet du réseau.
 - *main_EDF.py & main_LP.py*: fichier à lancer pour crées toutes les instances utilisées pour l'entraînement
 - *loss_EDF.py & loss_LP.py*: définit les foonctions de pertes des 2 problèmes
