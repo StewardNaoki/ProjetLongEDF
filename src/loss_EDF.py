@@ -6,6 +6,10 @@ from torchvision import transforms
 import time
 
 MAX_SHOW = 15
+DT = 0.5
+HOUSE_MAX = 9000
+P_MAX = 7000
+P_MIN = 1200
 DIEZ = "##########"
 EQUAL = "==============="
 
@@ -68,6 +72,9 @@ class CustomMSELoss():
 
     def __call__(self, outputs, targets, inputs):
         loss = self.f_loss(outputs, targets)
+        print("loss ", loss)
+        print("outputs ", outputs)
+        print("targets ", targets)
         self.cost = float(loss)
         self.penalty, res = compute_penalty(
             outputs, inputs, self.alpha, self.beta)
@@ -103,10 +110,7 @@ class GuidedCostLoss():
 
     def __init__(self, alpha=0, beta=0):
         self.alpha = alpha
-        if beta == 0:
-            self.beta = alpha
-        else:
-            self.beta = beta
+        self.beta = beta
         # self.f_loss = nn.MSELoss()
         self.cost = 0.0
 
@@ -132,12 +136,22 @@ class GuidedCostLoss():
 
 def compute_penalty(outputs, inputs, alpha, beta):
     pve = outputs
-    pmax = inputs[:, 1]
-    need = inputs[:, 2]
-    delta_t = 10
+    # pmax = inputs[:, 1]
+    need = inputs[:, 1]
     relu = nn.ReLU()
-    p1 = (relu((pve.t() - pmax).t())).sum() + (relu(-pve)).sum()
-    p2 = ((need - (delta_t * pve).sum(dim=1))**2).sum()
-    penalty = alpha*p1 + beta*p2
+    penalty_max = (relu((pve.t() - (P_MAX/P_MAX)).t())).sum()
+    penalty_min = (relu(((P_MIN/P_MAX) - pve.t()).t())).sum()
+    # print("pve min: ", (relu(( (P_MIN/P_MAX)- pve.t()).t())[0]))
+    # print("pve max: ", (relu((pve.t() - 1).t())[0]))
+    # penalty_min = (relu(-pve)).sum()
+    penalty_need = ((need - (DT * pve).sum(dim=1))**2).sum()
+    penalty = alpha*(penalty_max + penalty_min) + beta*(penalty_need)
+    # print("Outputs: ", pve )
+    # print("penalty max: ", penalty_max )
+    # print("penalty_min: ", penalty_min )
+    # print("penalty_need: ", penalty_need )
+    # print("pmax: ",pmax)
+    # print("need: ",need)
+    # print("penalty: ", penalty )
 
     return float(penalty), penalty

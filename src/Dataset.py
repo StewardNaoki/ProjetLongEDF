@@ -6,10 +6,12 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from torchvision import transforms
 
+N = 94
 P_MIN = 1200
 P_MAX = 7000
 HOUSE_MAX = 9000
 V_MAX = 40000
+DT= 0.5
 
 class EDF_data(Dataset):
 
@@ -52,11 +54,10 @@ class EDF_data(Dataset):
         X = []
         # X += house_pmax
         # X += vehicule_pmax
-        X += [(vehicule_energy_need[0] / V_MAX)]
+        # X += [(vehicule_energy_need[0] - N*P_MIN*DT) / (P_MAX - P_MIN)]
+        X += [(vehicule_energy_need[0]) / (P_MAX)]
         # print(len(house_cons))
-        # i= 0
         for x in house_cons:
-            # print(i)
             X.append(x/HOUSE_MAX)
 
         X = np.asarray(X)
@@ -64,7 +65,8 @@ class EDF_data(Dataset):
         # print(X)
         label = self.data_frame["opt_charging_profile_step1"].iloc[idx]
         label = np.asarray(eval(label))
-        label = (label - P_MIN)/(P_MAX - P_MIN)
+        # label = (label - P_MIN)/(P_MAX - P_MIN)
+        label = (label) / P_MAX
 
         # print("X shape ", X.shape)
         # print("label shape ",label.shape)
