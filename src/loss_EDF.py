@@ -72,9 +72,9 @@ class CustomMSELoss():
 
     def __call__(self, outputs, targets, inputs):
         loss = self.f_loss(outputs, targets)
-        print("loss ", loss)
-        print("outputs ", outputs)
-        print("targets ", targets)
+        # print("loss ", loss)
+        # print("outputs ", outputs)
+        # print("targets ", targets)
         self.cost = float(loss)
         self.penalty, res = compute_penalty(
             outputs, inputs, self.alpha, self.beta)

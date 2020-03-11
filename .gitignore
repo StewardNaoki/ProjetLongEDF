@@ -111,4 +111,4 @@ log/*
 *.csv
 *.lp
 *.ipynb
-
+old_log/*
