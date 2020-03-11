@@ -2,8 +2,8 @@ set -e
 num_epoch=350
 num_batch=128
 num_thread=8
-alpha=0.1
-beta=0.1
+alpha=0.0
+beta=0.0
 num_data=40000
 
 num_neur=16
