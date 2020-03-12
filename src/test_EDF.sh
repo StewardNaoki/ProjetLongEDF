@@ -1,6 +1,6 @@
 set -e
 num_epoch=5
-num_batch=128
+num_batch=32
 num_thread=1
 alpha=0.0
 beta=0.0
