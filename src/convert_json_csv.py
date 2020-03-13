@@ -6,6 +6,12 @@ import numpy as np
 import argparse
 import os
 
+N = 94
+P_MIN = 1200
+P_MAX = 7000
+HOUSE_MAX = 9000
+V_MAX = 40000
+DT= 0.5
 
 PATH_DATA = "./../DATA/"
 OUTPUT_VECTOR_SIZE = 94

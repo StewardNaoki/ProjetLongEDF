@@ -93,8 +93,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", type=int, default=1,
                         help="number of epoch (default: 1)")
-    parser.add_argument("--batch", type=int, default=100,
-                        help="number of batch (default: 100)")
+    parser.add_argument("--batch", type=int, default=32,
+                        help="number of batch (default: 32)")
     parser.add_argument("--valpct", type=float, default=0.2,
                         help="proportion of test data (default: 0.2)")
     parser.add_argument("--num_threads", type=int, default=1,
@@ -107,6 +107,8 @@ def main():
                         help="L2 regularisation (default: 0.001)")
     parser.add_argument("--dropout", default=False, action='store_true',
                         help="Activate or not dropout")
+    parser.add_argument("--network", type=str, default="FC",
+                        help="Type of network used (default: FC)")
 
     parser.add_argument("--num_json_max", type=int, default=10,
                         help="Maximum number of json file to load in csv (default: 10)")
@@ -192,10 +194,14 @@ def main():
     if args.num_deep_layer < 0:
         assert(False), "Not number of correct deep layers: {}".format(
             args.num_deep_layer)
-    else:
+    elif args.network == "FC":
         print("Model with {} layers".format(args.num_deep_layer))
         model = nw.FullyConnectedRegularized(
-            num_in_param=OUTPUT_VECTOR_SIZE + 1, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
+            num_in_var=OUTPUT_VECTOR_SIZE + 1, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
+    elif args.network == "CNN":
+        model = nw.CNN(num_in_var=OUTPUT_VECTOR_SIZE, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, dropout=args.dropout)
+    else:
+        assert(False), "Selected network not correct: {}".format(args.network)
 
     #print model info
     print("Network architechture:\n", model)
@@ -216,19 +222,21 @@ def main():
         print("MSE loss used with alpha: {}".format(args.alpha))
         loss_name = "MSELoss/"
         # f_loss = nn.MSELoss()
-        f_loss = loss.CustomMSELoss(alpha=args.alpha, beta= args.beta)
+        f_loss = loss.CustomMSELoss(alpha=args.alpha, beta=args.beta)
     elif args.loss == "PCL":
         print("PCL used with alpha: {}".format(args.alpha))
         loss_name = "PCL/"
-        f_loss = loss.PureCostLoss(alpha=args.alpha, beta= args.beta)
+        f_loss = loss.PureCostLoss(alpha=args.alpha, beta=args.beta)
     elif args.loss == "GCL":
         print("GCL used with alpha: {}".format(args.alpha))
         loss_name = "GCL/"
-        f_loss = loss.GuidedCostLoss(alpha=args.alpha, beta= args.beta)
+        f_loss = loss.GuidedCostLoss(alpha=args.alpha, beta=args.beta)
 
     #define optimizer
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
 
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = 1e-5
     #Make run directory
     run_name = "runV{}D{}L{}A{}-".format(
         args.num_in_var, args.num_deep_layer, args.loss, args.alpha)
