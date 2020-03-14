@@ -61,6 +61,7 @@ class CNN(nn.Module):
         max_pool_kernel_size = 3
         cnn_stride = 1
         cnn_kernel_size = 5
+        num_channel = 64
         self.cnn_layer_list = []
         self.fc_layer_list = []
         
@@ -69,24 +70,26 @@ class CNN(nn.Module):
 
         if dropout:
             self.cnn_layer_list.append(nn.Dropout(0.2))
-        self.cnn_layer_list.append(nn.Conv1d(in_channels=1, out_channels=20, kernel_size=cnn_kernel_size, stride=cnn_stride))
+        self.cnn_layer_list.append(nn.Conv1d(in_channels=1, out_channels=num_channel, kernel_size=cnn_kernel_size, stride=cnn_stride))
         in_lenght = np.floor(((in_lenght-(cnn_kernel_size - 1)-1) / cnn_stride)+1)
         self.cnn_layer_list.append(nn.ReLU())
+        self.cnn_layer_list.append(nn.BatchNorm1d(num_channel))
         self.cnn_layer_list.append(nn.MaxPool1d(kernel_size = max_pool_kernel_size, stride=max_pool_stride))
         in_lenght = np.floor(((in_lenght-(max_pool_kernel_size - 1) -1) / max_pool_stride)+1)
         if dropout:
             self.cnn_layer_list.append(nn.Dropout(0.5))
         for depth in range(num_depth):
-            self.cnn_layer_list.append(nn.Conv1d(in_channels=20, out_channels=20, kernel_size=cnn_kernel_size, stride=cnn_stride))
+            self.cnn_layer_list.append(nn.Conv1d(in_channels=num_channel, out_channels=num_channel, kernel_size=cnn_kernel_size, stride=cnn_stride))
             in_lenght = np.floor(((in_lenght-(cnn_kernel_size - 1)-1) / cnn_stride)+1)
             self.cnn_layer_list.append(nn.ReLU())
+            self.cnn_layer_list.append(nn.BatchNorm1d(num_channel))
             self.cnn_layer_list.append(nn.MaxPool1d(kernel_size = max_pool_kernel_size, stride=max_pool_stride))
             print(in_lenght)
             in_lenght = np.floor(((in_lenght-(max_pool_kernel_size - 1)-1) / max_pool_stride)+1)
             print(in_lenght)
             assert(in_lenght > min_in_fc), "too deep: depth = {}, in_lenght = {}".format(num_depth, in_lenght)
 
-        num_in_fc = int((20*in_lenght) + 1)
+        num_in_fc = int((num_channel*in_lenght) + 1)
         print("num_in_fc ", num_in_fc)
         fcIn = nn.Linear(num_in_fc, num_neur)
         fcOut = nn.Linear(num_neur, num_out_var)

@@ -199,7 +199,7 @@ def main():
         model = nw.FullyConnectedRegularized(
             num_in_var=OUTPUT_VECTOR_SIZE + 1, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
     elif args.network == "CNN":
-        model = nw.CNN(num_in_var=OUTPUT_VECTOR_SIZE, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, dropout=args.dropout)
+        model = nw.CNN(num_in_var=OUTPUT_VECTOR_SIZE, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
     else:
         assert(False), "Selected network not correct: {}".format(args.network)
 
@@ -239,8 +239,8 @@ def main():
     for param_group in optimizer.param_groups:
         param_group['lr'] = 1e-3
     #Make run directory
-    run_name = "runV{}D{}L{}A{}-".format(
-        args.num_in_var, args.num_deep_layer, args.loss, args.alpha)
+    run_name = "runV{}D{}Net{}L{}A{}-".format(
+        args.num_in_var, args.num_deep_layer, args.network, args.loss, args.alpha)
 
     #Create LogManager
     LogManager = lw.EDF_Log(LOG_DIR, run_name)
