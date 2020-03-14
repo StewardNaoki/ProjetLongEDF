@@ -25,7 +25,18 @@ class EDF_data(Dataset):
         """
         self.data_frame = pd.read_csv(csv_file_name)
         self.transform = transform
-        # self.IMG_SIZE = 64
+        num_max_analyse = 5000
+        num_data = self.data_frame.shape[0]
+        house_cons_list = []
+        for idx in range(num_data):
+            # hc = data_frame["opt_charging_profile_step1"].iloc[idx]
+            hc = self.data_frame["house_cons"].iloc[idx]
+            hc = eval(hc)
+            house_cons_list.append(hc)
+            if idx > num_max_analyse:
+                break
+        self.house_mean = np.mean(house_cons_list, axis = 0)
+        self.house_vari = np.sqrt(np.var(house_cons_list, axis = 0))
 
     def __len__(self):
         return len(self.data_frame)
@@ -41,26 +52,27 @@ class EDF_data(Dataset):
         # vehicule_pmax = eval(vehicule_pmax)
 
         vehicule_energy_need = self.data_frame["vehicle_energy_need"].iloc[idx]
-        vehicule_energy_need = eval(vehicule_energy_need)
+        vehicule_energy_need = np.asarray(eval(vehicule_energy_need))
 
         house_cons = self.data_frame["house_cons"].iloc[idx]
-        house_cons = eval(house_cons)
+        house_cons = np.asarray(eval(house_cons))
+        house_cons = np.divide(house_cons - self.house_mean, self.house_vari)
 
-        # print("house_pmax", house_pmax)
-        # print("vehicule_pmax", vehicule_pmax)
         # print("vehicule_energy_need", vehicule_energy_need)
         # print("house_cons", house_cons)
 
-        X = []
-        # X += house_pmax
-        # X += vehicule_pmax
-        # X += [(vehicule_energy_need[0] - N*P_MIN*DT) / (P_MAX - P_MIN)]
-        X += [(vehicule_energy_need[0]) / (P_MAX)]
-        # print(len(house_cons))
-        for x in house_cons:
-            X.append(x/HOUSE_MAX)
+        X = np.hstack((vehicule_energy_need/P_MAX, house_cons))
+        # print(X)
+        # X = []
+        # # X += house_pmax
+        # # X += vehicule_pmax
+        # # X += [(vehicule_energy_need[0] - N*P_MIN*DT) / (P_MAX - P_MIN)]
+        # X += [(vehicule_energy_need[0]) / (P_MAX)]
+        # # print(len(house_cons))
+        # for x in house_cons:
+        #     X.append(x/HOUSE_MAX)
 
-        X = np.asarray(X)
+        # X = np.asarray(X)
 
         # print(X)
         label = self.data_frame["opt_charging_profile_step1"].iloc[idx]

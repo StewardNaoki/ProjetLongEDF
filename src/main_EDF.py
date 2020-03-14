@@ -233,10 +233,11 @@ def main():
         f_loss = loss.GuidedCostLoss(alpha=args.alpha, beta=args.beta)
 
     #define optimizer
-    optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
+    # optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
+    optimizer = torch.optim.Adam(model.parameters())
 
     for param_group in optimizer.param_groups:
-        param_group['lr'] = 1e-5
+        param_group['lr'] = 1e-3
     #Make run directory
     run_name = "runV{}D{}L{}A{}-".format(
         args.num_in_var, args.num_deep_layer, args.loss, args.alpha)

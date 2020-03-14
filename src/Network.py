@@ -159,6 +159,12 @@ def train(model, loader, f_loss, optimizer, device):
 
         ###Print test
 
+        # print("Weights\n")
+        # print(model.CNN_Layers[0].weight)
+        # print(model.FC_Layers[0].weight)
+        # print("biases\n")
+        # print(model.CNN_Layers[0].bias)
+        # print(model.FC_Layers[0].bias)
 
         # if i ==0 :
         #     print("inputs ",inputs)
@@ -172,6 +178,7 @@ def train(model, loader, f_loss, optimizer, device):
         #     plt.title('Courbe{}'.format(i))
         #     plt.legend()
         #     plt.show()
+
 
         #get loss
 
@@ -255,7 +262,7 @@ def test(model, loader, f_loss, device, final_test=False, log_manager = None):
             # that our loss criterion is averaging over its samples
 
             loss = f_loss(outputs, targets, inputs)
-            print("testing loss ", loss)
+            # print("testing loss ", loss)
 
             tot_loss += inputs.shape[0] * \
                 f_loss(outputs, targets, inputs).item()
