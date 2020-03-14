@@ -64,9 +64,9 @@ class CNN(nn.Module):
         num_channel = 64
         self.cnn_layer_list = []
         self.fc_layer_list = []
-        
+
         # self.bn1 = nn.BatchNorm2d(32)
-        
+
 
         if dropout:
             self.cnn_layer_list.append(nn.Dropout(0.2))
@@ -106,7 +106,7 @@ class CNN(nn.Module):
             self.num_in_var, x.shape[1])
         house_cons = x[:,1:].view(x.shape[0],-1,x.shape[1]-1)
         need = x[:,0].view(-1, x.shape[0]).t()
-        
+
         cnn_output = self.CNN_Layers(house_cons)
         # print("shape of CNN output ", cnn_output.shape)
         cnn_output = cnn_output.view(x.shape[0], -1)
