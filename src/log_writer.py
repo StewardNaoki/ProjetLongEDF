@@ -266,9 +266,13 @@ class EDF_Log(LogManager):
             os.mkdir(image_folder)
         # n = min(15, len(outputs))
         n = 1
-        output_pve = outputs[:n, :].tolist()
-        target_pve = targets[:n, :].tolist()
-        house_cons = inputs[:n, 1:].tolist()
+        before_zero = 53*[0]
+        after_zero = 27*[0]
+        output_pve = before_zero + (outputs[:n, :].tolist()[0]) + after_zero
+        target_pve = before_zero + (targets[:n, :].tolist()[0]) + after_zero
+        house_cons = (inputs[:n, 1:].tolist()[0])
+        # print(len(output_pve))
+        # print(len(target_pve))
         # output_pve = outputs[:n, :]
         # target_pve = targets[:n, :]
         # house_cons = inputs[:n, 3:]
@@ -280,9 +284,9 @@ class EDF_Log(LogManager):
         # dict_csv["target_pve"].append(target_pve[0][:])
         # dict_csv["house_cons"].append(house_cons[0][:])
         fig = plt.figure()
-        plt.plot(output_pve[0][:], label="output_pve")
-        plt.plot(target_pve[0][:], label="target_pve")
-        plt.plot(house_cons[0][:], label="house_cons")
+        plt.plot(output_pve[:], label="output_pve")
+        plt.plot(target_pve[:], label="target_pve")
+        plt.plot(house_cons[:], label="house_cons")
         plt.title('Courbe{}'.format(num))
         plt.legend()
         plt.savefig(image_folder + 'Courbe{}.png'.format(num),
@@ -297,33 +301,36 @@ class EDF_Log(LogManager):
 
     def write_example(self, num, outputs, targets, inputs):
         num_batch = outputs.shape[0]
+        # print(outputs.shape)
+        # print(targets.shape)
+        # print(inputs.shape)
         house_cons = inputs[:, 1:]
         # loss = torch.mean(((torch.max(house_cons + outputs, 1)[0]) - (torch.max(house_cons + targets, 1)[0]))**2)
-        output_cost = torch.max(house_cons + outputs, 1)[0]
-        target_cost = torch.max(house_cons + targets, 1)[0]
-        output_penalty = [0]
+#         output_cost = torch.max(house_cons + outputs, 1)[0]
+#         target_cost = torch.max(house_cons + targets, 1)[0]
+#         output_penalty = [0]
 
-        txt = """Example {}
-===============
+#         txt = """Example {}
+# ===============
 
-Problem
-===============
-
-
-Costs
-===============
-targets cost: {}
+# Problem
+# ===============
 
 
-output cost: {}
+# Costs
+# ===============
+# targets cost: {}
 
 
-Penalty
-===============
-output penalty: {}
+# output cost: {}
 
 
-""".format(num, float(target_cost[0]), float(output_cost[0]), output_penalty[0])
-        self.example_text += txt
-        print("example_text: ", txt)
+# Penalty
+# ===============
+# output penalty: {}
+
+
+# """.format(num, float(target_cost[0]), float(output_cost[0]), output_penalty[0])
+#         self.example_text += txt
+#         print("example_text: ", txt)
         self.plot_writer(outputs, targets, inputs, num)

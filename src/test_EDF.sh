@@ -1,10 +1,10 @@
 set -e
-num_epoch=100
+num_epoch=1
 num_batch=32
 num_thread=1
 alpha=0.001
 beta=0.001
-num_data=1000
+num_data=5000
 
 num_neur=16
 num_layer=1

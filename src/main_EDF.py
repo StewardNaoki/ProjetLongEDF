@@ -191,17 +191,19 @@ def main():
     # print("number of const: ", args.num_const)
     print("Size of output vector: ", OUTPUT_VECTOR_SIZE)
 
-    if args.num_deep_layer < 0:
-        assert(False), "Not number of correct deep layers: {}".format(
-            args.num_deep_layer)
-    elif args.network == "FC":
-        print("Model with {} layers".format(args.num_deep_layer))
-        model = nw.FullyConnectedRegularized(
-            num_in_var=OUTPUT_VECTOR_SIZE + 1, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
-    elif args.network == "CNN":
-        model = nw.CNN(num_in_var=OUTPUT_VECTOR_SIZE, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
-    else:
-        assert(False), "Selected network not correct: {}".format(args.network)
+    # if args.num_deep_layer < 0:
+    #     assert(False), "Not number of correct deep layers: {}".format(
+    #         args.num_deep_layer)
+    # elif args.network == "FC":
+    #     print("Model with {} layers".format(args.num_deep_layer))
+    #     model = nw.FullyConnectedRegularized(
+    #         num_in_var=OUTPUT_VECTOR_SIZE + 1, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
+    # elif args.network == "CNN":
+    #     model = nw.CNN(num_in_var=OUTPUT_VECTOR_SIZE, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
+    # else:
+    #     assert(False), "Selected network not correct: {}".format(args.network)
+    
+    model = nw.CNN2()
 
     #print model info
     print("Network architechture:\n", model)
@@ -217,7 +219,6 @@ def main():
     model.to(device)
 
     # Define loss
-    # f_loss = torch.nn.CrossEntropyLoss()
     if args.loss == "MSE":
         print("MSE loss used with alpha: {}".format(args.alpha))
         loss_name = "MSELoss/"
@@ -231,6 +232,7 @@ def main():
         print("GCL used with alpha: {}".format(args.alpha))
         loss_name = "GCL/"
         f_loss = loss.GuidedCostLoss(alpha=args.alpha, beta=args.beta)
+    # f_loss = loss.IntervalCostLoss(alpha = args.alpha, beta = args.beta)
 
     #define optimizer
     # optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)

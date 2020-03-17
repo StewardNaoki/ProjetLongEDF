@@ -18,7 +18,7 @@ OUTPUT_VECTOR_SIZE = 94
 
 def generate_csv(path_json_dir, input_file_path , num_json_max ):
     print("Opening json folder: ", path_json_dir)
-    dict_input = {"house_pmax": [], "vehicle_pmax": [],"vehicle_energy_need": [],"house_cons": [], "opt_charging_profile_step1": []}
+    dict_input = {"house_pmax": [], "vehicle_pmax": [],"vehicle_energy_need": [],"house_cons": [], "opt_charging_profile_step1": [], "opt_charging_profile":[]}
 
     num_json = 0
     with tqdm(total=num_json_max) as pbar:
@@ -35,6 +35,7 @@ def generate_csv(path_json_dir, input_file_path , num_json_max ):
             house_cons=[]
             vehicle_energy_need=[]
             opt_charging_profile_step1=[]
+            opt_charging_profile=[]
 
             df=pd.read_json(path_json_dir+filename)
 
@@ -45,6 +46,7 @@ def generate_csv(path_json_dir, input_file_path , num_json_max ):
             for i in range(OUTPUT_VECTOR_SIZE):
                 house_cons.append(df['house_cons'][i])
                 opt_charging_profile_step1.append(df['opt_charging_profile_step1'][i])
+                opt_charging_profile.append(df['opt_charging_profile'][i])
 
             dict_input["house_pmax"].append(house_pmax)
             dict_input["vehicle_pmax"].append(vehicle_pmax)
@@ -53,6 +55,7 @@ def generate_csv(path_json_dir, input_file_path , num_json_max ):
             dict_input["house_cons"].append(house_cons)
             ### Solution
             dict_input["opt_charging_profile_step1"].append(opt_charging_profile_step1)
+            dict_input["opt_charging_profile"].append(opt_charging_profile)
 
             num_json+= 1
     # print(dict_input.head())

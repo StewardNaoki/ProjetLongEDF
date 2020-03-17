@@ -55,8 +55,8 @@ class EDF_data(Dataset):
         vehicule_energy_need = np.asarray(eval(vehicule_energy_need))
 
         house_cons = self.data_frame["house_cons"].iloc[idx]
-        house_cons = np.asarray(eval(house_cons))
-        house_cons = np.divide(house_cons - self.house_mean, self.house_vari)
+        house_cons = np.asarray(eval(house_cons))/P_MAX
+        # house_cons = np.divide(house_cons - self.house_mean, self.house_vari)
 
         # print("vehicule_energy_need", vehicule_energy_need)
         # print("house_cons", house_cons)
@@ -75,8 +75,10 @@ class EDF_data(Dataset):
         # X = np.asarray(X)
 
         # print(X)
-        label = self.data_frame["opt_charging_profile_step1"].iloc[idx]
+        # label = self.data_frame["opt_charging_profile_step1"].iloc[idx]
+        label = self.data_frame["opt_charging_profile"].iloc[idx]
         label = np.asarray(eval(label))
+        label = label[53:67]
         # label = (label - P_MIN)/(P_MAX - P_MIN)
         label = (label) / P_MAX
 
