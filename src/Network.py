@@ -65,7 +65,7 @@ class CNN2(nn.Module):
         num_out_var = 94
         self.cnn_layer_list = []
         self.fc_layer_list = []
-        self.sigmoid = nn.Sigmoid()
+        # self.sigmoid = nn.Sigmoid()
 
         # self.bn1 = nn.BatchNorm2d(32)
 

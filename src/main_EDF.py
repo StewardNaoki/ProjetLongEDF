@@ -203,7 +203,8 @@ def main():
     # else:
     #     assert(False), "Selected network not correct: {}".format(args.network)
     
-    model = nw.CNN2()
+    print(args.dropout)
+    model = nw.CNN2(dropout=args.dropout, num_neur= args.num_neur, num_depth= args.num_deep_layer)
 
     #print model info
     print("Network architechture:\n", model)
