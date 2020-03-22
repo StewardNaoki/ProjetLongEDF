@@ -238,11 +238,11 @@ def main():
     # optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
     optimizer = torch.optim.Adam(model.parameters())
 
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = 1e-3
+    # for param_group in optimizer.param_groups:
+    #     param_group['lr'] = 1e-3
     #Make run directory
-    run_name = "runV{}D{}Net{}L{}A{}-".format(
-        args.num_in_var, args.num_deep_layer, args.network, args.loss, args.alpha)
+    run_name = "runV{}D{}N{}Net{}L{}A{}B{}-".format(
+        args.num_in_var, args.num_deep_layer, args.num_neur, args.network, args.loss, args.alpha, args.beta)
 
     #Create LogManager
     LogManager = lw.EDF_Log(LOG_DIR, run_name)

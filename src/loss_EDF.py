@@ -72,15 +72,15 @@ class CustomMSELoss():
 
     def __call__(self, outputs, targets, inputs):
         loss = self.f_loss(outputs, targets)
+        # print(outputs, targets)
         self.cost = float(loss)
-        # self.penalty, res = compute_penalty(
-            # outputs, inputs, self.alpha, self.beta)
+        self.penalty, res = compute_penalty(outputs, inputs, self.alpha, self.beta)
         # print("loss ", loss)
         # print("outputs ", outputs[0])
         # print("targets ", targets[0])
-        # print("penalty ", self.penalty)
-        # return loss + res
-        return loss
+        # print("penalty ", res)
+        return loss + res
+        # return loss
 
 
 class PureCostLoss():
@@ -183,11 +183,11 @@ class GuidedCostLoss():
 
 def compute_penalty(outputs, inputs, alpha, beta):
     pve = outputs
-    # pmax = inputs[:, 1]
     need = inputs[:, 1]
     relu = nn.ReLU()
-    penalty_max = (relu((pve.t() - (P_MAX/P_MAX)).t())).sum(dim = 1).mean()
-    penalty_min = (relu(((P_MIN/P_MAX) - pve.t()).t())).sum()
+    power_correct = pve + (P_MIN/P_MAX) * (pve == 0).float()
+    penalty_max = (relu((power_correct - (P_MAX/P_MAX)))).sum(dim = 1).mean()
+    penalty_min = (relu(((P_MIN/P_MAX) - pve))).sum(dim = 1).mean()
     # print("pve min: ", (relu(( (P_MIN/P_MAX)- pve.t()).t())[0]))
     # print("pve max: ", (relu((pve.t() - 1).t())[0]))
     # penalty_min = (relu(-pve)).sum()

@@ -62,7 +62,7 @@ class CNN2(nn.Module):
         cnn_stride = 1
         cnn_kernel_size = 3
         num_channel = 32
-        num_out_var = 14
+        num_out_var = 94
         self.cnn_layer_list = []
         self.fc_layer_list = []
         self.sigmoid = nn.Sigmoid()
@@ -71,13 +71,19 @@ class CNN2(nn.Module):
 
         self.cnn_layer_list.append(nn.Conv1d(in_channels=1, out_channels=num_channel, kernel_size=cnn_kernel_size, stride=cnn_stride))
         in_lenght = np.floor(((in_lenght-(cnn_kernel_size - 1)-1) / cnn_stride)+1)
-        self.cnn_layer_list.append(nn.ReLU())
         self.cnn_layer_list.append(nn.BatchNorm1d(num_channel))
+        self.cnn_layer_list.append(nn.ReLU())
+        if dropout:
+            self.cnn_layer_list.append(nn.Dropout(0.2))
+
 
         self.cnn_layer_list.append(nn.Conv1d(in_channels=num_channel, out_channels=num_channel, kernel_size=cnn_kernel_size, stride=cnn_stride))
         in_lenght = np.floor(((in_lenght-(cnn_kernel_size - 1)-1) / cnn_stride)+1)
-        self.cnn_layer_list.append(nn.ReLU())
         self.cnn_layer_list.append(nn.BatchNorm1d(num_channel))
+        self.cnn_layer_list.append(nn.ReLU())
+        if dropout:
+            self.cnn_layer_list.append(nn.Dropout(0.5))
+
 
         self.cnn_layer_list.append(nn.MaxPool1d(kernel_size = max_pool_kernel_size, stride=max_pool_stride))
         in_lenght = np.floor(((in_lenght-(max_pool_kernel_size - 1) -1) / max_pool_stride)+1)
@@ -86,13 +92,19 @@ class CNN2(nn.Module):
 
             self.cnn_layer_list.append(nn.Conv1d(in_channels=num_channel, out_channels=num_channel, kernel_size=cnn_kernel_size, stride=cnn_stride))
             in_lenght = np.floor(((in_lenght-(cnn_kernel_size - 1)-1) / cnn_stride)+1)
-            self.cnn_layer_list.append(nn.ReLU())
             self.cnn_layer_list.append(nn.BatchNorm1d(num_channel))
+            self.cnn_layer_list.append(nn.ReLU())
+            if dropout:
+                self.cnn_layer_list.append(nn.Dropout(0.5))
+
 
             self.cnn_layer_list.append(nn.Conv1d(in_channels=num_channel, out_channels=num_channel, kernel_size=cnn_kernel_size, stride=cnn_stride))
             in_lenght = np.floor(((in_lenght-(cnn_kernel_size - 1)-1) / cnn_stride)+1)
-            self.cnn_layer_list.append(nn.ReLU())
             self.cnn_layer_list.append(nn.BatchNorm1d(num_channel))
+            self.cnn_layer_list.append(nn.ReLU())
+            if dropout:
+                self.cnn_layer_list.append(nn.Dropout(0.5))
+
 
 
             self.cnn_layer_list.append(nn.MaxPool1d(kernel_size = max_pool_kernel_size, stride=max_pool_stride))
@@ -109,6 +121,7 @@ class CNN2(nn.Module):
 
         self.fc_layer_list.append(fcIn)
         self.fc_layer_list.append(fcOut)
+        self.fc_layer_list.append(nn.Sigmoid())
 
         self.CNN_Layers = nn.Sequential(*self.cnn_layer_list)
         self.FC_Layers = nn.Sequential(*self.fc_layer_list)
@@ -131,7 +144,7 @@ class CNN2(nn.Module):
         # fc_output = fc_output.view(x.shape[0], 3, 4)
         # print("shape of FC output ", fc_output.shape)
 
-        return self.sigmoid(fc_output)
+        return fc_output
 
 def train(model, loader, f_loss, optimizer, device):
     """Train a model for one epoch, iterating over the loader
@@ -184,14 +197,16 @@ def train(model, loader, f_loss, optimizer, device):
         # print(model.FC_Layers[0].bias)
 
         # if i ==0 :
-        #     print("inputs ",inputs)
-        #     output_pve = outputs[:1, :].tolist()
-        #     target_pve = targets[:1, :].tolist()
-        #     house_cons = inputs[:1, 1:].tolist()
+        #     before_zero = 53*[0]
+        #     after_zero = 27*[0]
+        #     # print("inputs ",inputs)
+        #     output_pve =before_zero + outputs[:1, :].tolist()[0] + after_zero
+        #     target_pve = before_zero +targets[:1, :].tolist()[0] + after_zero
+        #     house_cons = inputs[:1, 1:].tolist()[0]
         #     fig = plt.figure()
-        #     plt.plot(output_pve[0][:], label="output_pve")
-        #     plt.plot(target_pve[0][:], label="target_pve")
-        #     plt.plot(house_cons[0][:], label="house_cons")
+        #     plt.plot(output_pve[:], label="output_pve")
+        #     plt.plot(target_pve[:], label="target_pve")
+        #     plt.plot(house_cons[:], label="house_cons")
         #     plt.title('Courbe{}'.format(i))
         #     plt.legend()
         #     plt.show()
@@ -216,7 +231,7 @@ def train(model, loader, f_loss, optimizer, device):
         assert(loss.requires_grad), "No gradient for loss"
 
         # print("Output: ", outputs)
-        predicted_targets = outputs
+        # predicted_targets = outputs
 
         # correct += (predicted_targets == targets).sum().item()
 
@@ -288,14 +303,20 @@ def test(model, loader, f_loss, device, final_test=False, log_manager = None):
             penalty += p
 
             # if i == 0 :
-            #     print("inputs ",inputs)
-            #     output_pve = outputs[:1, :].tolist()
-            #     target_pve = targets[:1, :].tolist()
-            #     house_cons = inputs[:1, 1:].tolist()
+            #     # print(outputs[:1, :].shape)
+            #     # print(outputs[:1, :])
+            #     # before_zero = 53*[0]
+            #     # after_zero = 27*[0]
+            #     # print("inputs ",inputs)
+            #     output_pve =outputs[:1, :].tolist()[0]
+            #     target_pve =targets[:1, :].tolist()[0]
+            #     # output_pve =before_zero + outputs[:1, :].tolist()[0] + after_zero
+            #     # target_pve = before_zero +targets[:1, :].tolist()[0] + after_zero
+            #     house_cons = inputs[:1, 1:].tolist()[0]
             #     fig = plt.figure()
-            #     plt.plot(output_pve[0][:], label="output_pve")
-            #     plt.plot(target_pve[0][:], label="target_pve")
-            #     plt.plot(house_cons[0][:], label="house_cons")
+            #     plt.plot(output_pve[:], label="output_pve")
+            #     plt.plot(target_pve[:], label="target_pve")
+            #     plt.plot(house_cons[:], label="house_cons")
             #     plt.title('Courbe{}'.format(i))
             #     plt.legend()
             #     plt.show()

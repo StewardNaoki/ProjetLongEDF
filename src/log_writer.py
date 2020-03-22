@@ -266,10 +266,12 @@ class EDF_Log(LogManager):
             os.mkdir(image_folder)
         # n = min(15, len(outputs))
         n = 1
-        before_zero = 53*[0]
-        after_zero = 27*[0]
-        output_pve = before_zero + (outputs[:n, :].tolist()[0]) + after_zero
-        target_pve = before_zero + (targets[:n, :].tolist()[0]) + after_zero
+        # before_zero = 53*[0]
+        # after_zero = 27*[0]
+        # output_pve = before_zero + (outputs[:n, :].tolist()[0]) + after_zero
+        # target_pve = before_zero + (targets[:n, :].tolist()[0]) + after_zero
+        output_pve = (outputs[:n, :].tolist()[0])
+        target_pve = (targets[:n, :].tolist()[0])
         house_cons = (inputs[:n, 1:].tolist()[0])
         # print(len(output_pve))
         # print(len(target_pve))

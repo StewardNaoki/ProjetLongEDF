@@ -78,7 +78,7 @@ class EDF_data(Dataset):
         # label = self.data_frame["opt_charging_profile_step1"].iloc[idx]
         label = self.data_frame["opt_charging_profile"].iloc[idx]
         label = np.asarray(eval(label))
-        label = label[53:67]
+        # label = label[53:67]
         # label = (label - P_MIN)/(P_MAX - P_MIN)
         label = (label) / P_MAX
 
