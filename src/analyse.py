@@ -8,36 +8,55 @@ import pandas as pd
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-# num = 5000
-# P_MAX = 9000
-# csv_file_name = "../DATA/inputNJM{}.csv".format(num)
-# data_frame = pd.read_csv(csv_file_name)
-# print(data_frame.head())
-# print(data_frame.shape[0])
-# house_cons_list = []
-# mean = []
-# for idx in range(num):
-#     hc = data_frame["opt_charging_profile"].iloc[idx]
-#     # hc = data_frame["house_cons"].iloc[idx]
-#     hc = eval(hc)
-#     # mean.append(sum(hc)/len(hc))
-#     house_cons_list.append(hc)
-#     # print(house_cons_list)
-#     # if idx == 5:
-#     #     break
-# house_cons_list = np.asarray(house_cons_list)
-# house_mean = np.mean(house_cons_list, axis = 0)
-# # house_vari = np.sqrt(np.var(house_cons_list, axis = 0))
-# # house_cons_list =np.divide(house_cons_list - house_mean, house_vari)
-# # print(house_mean.shape)
-# # print(house_cons_list.shape)
+num = 5000
+P_MAX = 9000
+csv_file_name = "../DATA/inputNJM{}.csv".format(num)
+data_frame = pd.read_csv(csv_file_name)
+print(data_frame.head())
+print(data_frame.shape[0])
+house_cons_list = []
+house_cons_list1 = []
+mean = []
+for idx in range(num):
+    hc1 = data_frame["house_cons"].iloc[idx]
+    hc = data_frame["opt_charging_profile"].iloc[idx]
+    # hc = data_frame["house_cons"].iloc[idx]
+    hc = eval(hc)
+    hc1 = eval(hc1)
+    # mean.append(sum(hc)/len(hc))
+    house_cons_list.append(hc)
+    house_cons_list1.append(hc1)
+    # print(hc1)
+    # print(house_cons_list)
+    # if idx == 5:
+    #     break
+house_cons_list = np.asarray(house_cons_list)/P_MAX
+house_cons_list1 = np.asarray(house_cons_list1)/P_MAX
+house_mean = np.mean(house_cons_list, axis = 0)
+house_mean1 = np.mean(house_cons_list1, axis = 0)
+house_vari = np.sqrt(np.var(house_cons_list, axis = 0))
+# house_cons_list =np.divide(house_cons_list - house_mean, house_vari)
+# print(house_mean.shape)
+# print(house_cons_list.shape)
 
-# print(house_mean)
+print(house_mean)
 
-# fig = plt.figure()
-# plt.plot(house_mean)
-# # plt.plot(house_cons_list[0])
-# # plt.legend()
+fig = plt.figure()
+plt.plot(house_mean)
+plt.plot(house_mean1)
+plt.show()
+fig = plt.figure()
+plt.plot(house_mean1)
+for k in range(10):
+    plt.plot(house_cons_list[k])
+plt.show()
+fig = plt.figure()
+plt.plot(house_vari)
+plt.show()
+# plt.plot(house_cons_list[0])
+# plt.plot(house_cons_list[1])
+# plt.plot(house_cons_list[2])
+# plt.legend()
 # plt.show()
 
 # # house_mean = house_mean[house_mean != 0]
@@ -100,29 +119,29 @@ relu = nn.ReLU()
 # print(maxim)
 # print(torch.mean(maxim))
 
-b = torch.tensor([[2,0,0,1,2,1,3,4],[3,1,1,0,0,3,3,3]])
-# b[:,:,0] = 4
-pve = b[:,1:]
-need = b[:,0]
+# b = torch.tensor([[2,0,0,1,2,1,3,4],[3,1,1,0,0,3,3,3]])
+# # b[:,:,0] = 4
+# pve = b[:,1:]
 # need = b[:,0]
-print(pve, need)
-pve_correct = 2*(pve==0).float()
-print(pve_correct)
-# print(torch.bmm(need,pve_correct))
-# print((need*pve_correct).view(pve.shape[0], pve.shape[2]))
-# # c.asfloat()
-# print(b)
+# # need = b[:,0]
+# print(pve, need)
+# pve_correct = 2*(pve==0).float()
 # print(pve_correct)
-# print(b + b_correct)
-c= pve+pve_correct
-# print((relu((c - (1/4))).sum()))
+# # print(torch.bmm(need,pve_correct))
+# # print((need*pve_correct).view(pve.shape[0], pve.shape[2]))
+# # # c.asfloat()
+# # print(b)
+# # print(pve_correct)
+# # print(b + b_correct)
+# c= pve+pve_correct
+# # print((relu((c - (1/4))).sum()))
+# # print((relu((c - (1/4)))))
+# print((relu(((2) - c))).sum(dim = 1).mean())
+# print((relu(((2) - c))))
 # print((relu((c - (1/4)))))
-print((relu(((2) - c))).sum(dim = 1).mean())
-print((relu(((2) - c))))
-print((relu((c - (1/4)))))
-print((need - (0.5 * pve).sum(dim=1)))
-penalty_need = ((need - (0.5 * pve).sum(dim=1))**2).sum()
-print(penalty_need)
+# print((need - (0.5 * pve).sum(dim=1)))
+# penalty_need = ((need - (0.5 * pve).sum(dim=1))**2).sum()
+# print(penalty_need)
 
 
 

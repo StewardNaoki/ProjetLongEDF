@@ -101,7 +101,9 @@ class PureCostLoss():
         # loss = self.f_loss(outputs, targets) +
         house_cons = inputs[:, 1:]
         # compute_penalty(outputs, inputs, self.alpha, self.beta)
-        loss = torch.mean(torch.max(house_cons + outputs, 1)[0])
+        max , _= torch.max(house_cons + outputs, 1)
+        # print(max)
+        loss = torch.mean(max)
         self.cost = float(loss)
         self.penalty, res = compute_penalty(
             outputs, inputs, self.alpha, self.beta)
