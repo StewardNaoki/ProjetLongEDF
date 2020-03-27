@@ -115,7 +115,8 @@ class LogManager:
     def write_examples(self):
         """
         Write example text in log and in tensor board
-        """example_file = open(self.run_dir_path + "/examples.txt", 'w')
+        """
+        example_file = open(self.run_dir_path + "/examples.txt", 'w')
         example_file.write(self.example_text)
         example_file.close()
         self.tensorboard_writer.add_text(
@@ -178,16 +179,18 @@ class LogManager:
             "Run {} Summary".format(self.run_num), summary_text)
 
 
+
 class LP_Log(LogManager):
     """
     Log for LP problem
-    """def __init__(self, logdir, raw_run_name, num_const=0):
+    """
+    def __init__(self, logdir, raw_run_name, num_const=0):
         super().__init__(logdir, raw_run_name)
         self.num_const = num_const
 
     def write_example(self, num, outputs, targets, inputs):
         """
-        Write result of testing
+        Write result of test
         """
 
         num_batch = outputs.shape[0]
@@ -206,6 +209,7 @@ class LP_Log(LogManager):
             num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
 
         negative_penalty = nn.ReLU()(-outputs).sum(dim=1).view(num_batch, 1)
+
         output_penalty += negative_penalty
 
         A = (a_const.transpose(2, 1)[0]).tolist()

@@ -208,6 +208,7 @@ def train(model, loader, f_loss, optimizer, device):
         # print("training loss ", loss)
         tot_loss += inputs.shape[0] * \
             f_loss(outputs, targets, inputs).item()
+        c, p = f_loss.get_info()
         cost += c
         penalty += p
 
