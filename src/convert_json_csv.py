@@ -17,6 +17,13 @@ PATH_DATA = "./../DATA/"
 OUTPUT_VECTOR_SIZE = 94
 
 def generate_csv(path_json_dir, input_file_path , num_json_max ):
+    """generate csv from json files
+    
+    Arguments:
+        path_json_dir {str} -- path to json directory
+        input_file_path {str} -- directory to where the csv is going to be written
+        num_json_max {int} -- number of json 
+    """
     print("Opening json folder: ", path_json_dir)
     dict_input = {"house_pmax": [], "vehicle_pmax": [],"vehicle_energy_need": [],"house_cons": [], "opt_charging_profile_step1": [], "opt_charging_profile":[]}
 

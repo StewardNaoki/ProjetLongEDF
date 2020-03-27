@@ -55,16 +55,16 @@ class CNN2(nn.Module):
         self.num_in_var = num_in_var
         # self.l2_reg = l2_reg
         in_lenght = num_in_var
-        in_channel = 1
-        min_in_fc = 4
+        in_channel = 1 #Number of channels
+        min_in_fc = 4 #Minimal number of channels
         max_pool_stride = 2
         max_pool_kernel_size = 3
         cnn_stride = 1
         cnn_kernel_size = 3
-        num_channel = 32
-        num_out_var = 94
-        self.cnn_layer_list = []
-        self.fc_layer_list = []
+        num_channel = 32 #Number of chennel in each layer
+        num_out_var = 94 #size of output vector
+        self.cnn_layer_list = [] #List of operation in CNN
+        self.fc_layer_list = [] #List of operation in fully connected
         # self.sigmoid = nn.Sigmoid()
 
         # self.bn1 = nn.BatchNorm2d(32)
@@ -134,15 +134,9 @@ class CNN2(nn.Module):
         need = x[:,0].view(-1, x.shape[0]).t()
 
         cnn_output = self.CNN_Layers(house_cons)
-        # print("shape of CNN output ", cnn_output.shape)
         cnn_output = cnn_output.view(x.shape[0], -1)
-        # print("shape of CNN output ", cnn_output.shape)
         fc_input = torch.cat([need, cnn_output], dim = 1)
-        # print("shape of CNN output ", fc_input.shape)
         fc_output = self.FC_Layers(fc_input)
-        # print("shape of FC output ", fc_output.shape)
-        # fc_output = fc_output.view(x.shape[0], 3, 4)
-        # print("shape of FC output ", fc_output.shape)
 
         return fc_output
 
@@ -175,14 +169,9 @@ def train(model, loader, f_loss, optimizer, device):
     tot_loss, correct = 0.0, 0.0
     cost, penalty = 0.0, 0.0
     for i, (inputs, targets) in enumerate(loader):
-        # pbar.update(1)
-        # pbar.set_description("Training step {}".format(i))
-        # print("input shape: ", inputs.shape)
-        # print("target shape: ", targets.shape)
 
         inputs, targets = inputs.to(device), targets.to(device)
 
-        # inputs = torch.Tensor(np.random.random((32,95)))
         # Compute the forward pass through the network up to the loss
         outputs = model(inputs)
 
@@ -219,9 +208,6 @@ def train(model, loader, f_loss, optimizer, device):
         # print("training loss ", loss)
         tot_loss += inputs.shape[0] * \
             f_loss(outputs, targets, inputs).item()
-        # print("training loss = {}, tot_loss = {} ".format(loss, tot_loss))
-        # print("input shape = {}".format(inputs.shape[0]))
-        c, p = f_loss.get_info()
         cost += c
         penalty += p
 
@@ -230,17 +216,9 @@ def train(model, loader, f_loss, optimizer, device):
         #test if loss has a defined gradient
         assert(loss.requires_grad), "No gradient for loss"
 
-        # print("Output: ", outputs)
-        # predicted_targets = outputs
-
-        # correct += (predicted_targets == targets).sum().item()
-
         optimizer.zero_grad()
-        # model.zero_grad()
         loss.backward()
-        # model.penalty().backward()
         optimizer.step()
-    # print("Tot penalty ", penalty/N)
     return tot_loss/N, correct/N, cost/N, penalty/N
 
 
@@ -301,25 +279,6 @@ def test(model, loader, f_loss, device, final_test=False, log_manager = None):
             c, p = f_loss.get_info()
             cost += c
             penalty += p
-
-            # if i == 0 :
-            #     # print(outputs[:1, :].shape)
-            #     # print(outputs[:1, :])
-            #     # before_zero = 53*[0]
-            #     # after_zero = 27*[0]
-            #     # print("inputs ",inputs)
-            #     output_pve =outputs[:1, :].tolist()[0]
-            #     target_pve =targets[:1, :].tolist()[0]
-            #     # output_pve =before_zero + outputs[:1, :].tolist()[0] + after_zero
-            #     # target_pve = before_zero +targets[:1, :].tolist()[0] + after_zero
-            #     house_cons = inputs[:1, 1:].tolist()[0]
-            #     fig = plt.figure()
-            #     plt.plot(output_pve[:], label="output_pve")
-            #     plt.plot(target_pve[:], label="target_pve")
-            #     plt.plot(house_cons[:], label="house_cons")
-            #     plt.title('Courbe{}'.format(i))
-            #     plt.legend()
-            #     plt.show()
 
 
             # For the accuracy, we compute the labels for each input image

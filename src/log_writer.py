@@ -18,6 +18,9 @@ style.use("ggplot")
 
 
 class LogManager:
+    """
+    Log manager class
+    """
     def __init__(self, logdir, raw_run_name):
         self.logdir = logdir
         self.raw_run_name = raw_run_name
@@ -28,6 +31,11 @@ class LogManager:
         self.tensorboard_writer = tensorboard_writer
 
     def generate_unique_dir(self):
+        """Generate unique dir path
+        
+        Returns:
+            [str] -- [new path to a directory]
+        """
         i = 0
         while(True):
             # i = int(time.time() % MAX_TIME)
@@ -44,6 +52,11 @@ class LogManager:
             time.sleep(1)
 
     def generate_unique_logpath(self):
+        """generate new logpath
+        
+        Returns:
+            str -- new log path
+        """
         i = 0
         while(True):
             # i = int(time.time() % MAX_TIME)
@@ -56,6 +69,9 @@ class LogManager:
             time.sleep(1)
 
     def write_log(self, log_file_path, val_acc, val_loss, train_acc, train_loss):
+        """ 
+        Write log
+        """
         with open(log_file_path, "a") as f:
             print("Logging to {}".format(log_file_path))
             f.write(f"{round(time.time(),3)},{round(float(val_acc),2)},{round(float(val_loss),4)},{round(float(train_acc),2)},{round(float(train_loss),4)}\n")
@@ -97,13 +113,18 @@ class LogManager:
         plt.show()
 
     def write_examples(self):
-        example_file = open(self.run_dir_path + "/examples.txt", 'w')
+        """
+        Write example text in log and in tensor board
+        """example_file = open(self.run_dir_path + "/examples.txt", 'w')
         example_file.write(self.example_text)
         example_file.close()
         self.tensorboard_writer.add_text(
             "Run {} Example".format(self.run_num), self.example_text)
 
     def summary_writer(self, model, optimizer):
+        """
+        Write summary of the run
+        """
 
         summary_file = open(self.run_dir_path + "/summary.txt", 'w')
 
@@ -133,6 +154,9 @@ class LogManager:
             "Run {} Summary".format(self.run_num), summary_text)
 
     def end_summary_witer(self, total_train_time, test_loss, test_acc, test_cost, test_pen):
+        """
+        Write end summary
+        """
 
         summary_file = open(self.run_dir_path + "/summary.txt", 'a')
         summary_text = """
@@ -154,31 +178,17 @@ class LogManager:
             "Run {} Summary".format(self.run_num), summary_text)
 
 
-# def plot_reader():
-#     data_frame = pd.read_csv('test.csv')
-#     # print(data_frame.head())
-#     output_pve = data_frame["output_pve"].iloc[1]
-#     target_pve = data_frame["target_pve"].iloc[1]
-#     house_cons = data_frame["house_cons"].iloc[1]
-#     # print(type(output_pve))
-#     # print(target_pve)
-#     # print(house_cons)
-#     for k in range(data_frame.shape[0]):
-#         output_pve = eval(data_frame["output_pve"].iloc[k])
-#         target_pve = eval(data_frame["target_pve"].iloc[k])
-#         house_cons = eval(data_frame["house_cons"].iloc[k])
-#         for i in range(len(output_pve)):
-#             print(output_pve[i])
-#             print(target_pve[i])
-#             print(house_cons[i])
-
-
 class LP_Log(LogManager):
-    def __init__(self, logdir, raw_run_name, num_const=0):
+    """
+    Log for LP problem
+    """def __init__(self, logdir, raw_run_name, num_const=0):
         super().__init__(logdir, raw_run_name)
         self.num_const = num_const
 
     def write_example(self, num, outputs, targets, inputs):
+        """
+        Write result of testing
+        """
 
         num_batch = outputs.shape[0]
         num_var = outputs.shape[1]
@@ -196,24 +206,11 @@ class LP_Log(LogManager):
             num_batch, 1, num_var), a_const) - b_const), min=0)).sum(dim=2)
 
         negative_penalty = nn.ReLU()(-outputs).sum(dim=1).view(num_batch, 1)
-
-        # print(negative_penalty)
-        # print(output_penalty)
         output_penalty += negative_penalty
 
         A = (a_const.transpose(2, 1)[0]).tolist()
         B = (b_const[0]).tolist()
         C = (inputs[:, -num_var:][0]).tolist()
-
-        # print(inputs)
-        # print(inputs.shape)
-
-        # print(output_cost.shape)
-        # print("targets cost: ", -1*float(target_cost[0]))# ne pas oublier les -1
-        # print("outputs cost: ", -1*float(output_cost[0]))
-        # print("targets: ", targets[0])
-        # print("outputs: ", outputs[0])
-        # print("\n\n")
 
         txt = """Example {}
 ===============
@@ -264,27 +261,10 @@ class EDF_Log(LogManager):
         image_folder = self.run_dir_path + "/images/"
         if not os.path.isdir(image_folder):
             os.mkdir(image_folder)
-        # n = min(15, len(outputs))
         n = 1
-        # before_zero = 53*[0]
-        # after_zero = 27*[0]
-        # output_pve = before_zero + (outputs[:n, :].tolist()[0]) + after_zero
-        # target_pve = before_zero + (targets[:n, :].tolist()[0]) + after_zero
         output_pve = (outputs[:n, :].tolist()[0])
         target_pve = (targets[:n, :].tolist()[0])
         house_cons = (inputs[:n, 1:].tolist()[0])
-        # print(len(output_pve))
-        # print(len(target_pve))
-        # output_pve = outputs[:n, :]
-        # target_pve = targets[:n, :]
-        # house_cons = inputs[:n, 3:]
-        # print(output_pve)
-        # print(target_pve)
-        # print(house_cons)
-        # dict_csv = {"output_pve": [], "target_pve": [], "house_cons": []}
-        # dict_csv["output_pve"].append(output_pve[0][:])
-        # dict_csv["target_pve"].append(target_pve[0][:])
-        # dict_csv["house_cons"].append(house_cons[0][:])
         fig = plt.figure()
         plt.plot(output_pve[:], label="output_pve")
         plt.plot(target_pve[:], label="target_pve")
@@ -297,42 +277,8 @@ class EDF_Log(LogManager):
         im = im.transpose((2, 0, 1))
         self.tensorboard_writer.add_image(
             "Run_{}_Results/Courbe{}".format(self.run_num, num), im)
-        # df_csv = pd.DataFrame(dict_csv)
-        # # print(df_csv.head())
-        # df_csv.to_csv(self.run_dir_path + '/courbes.csv', index=False)
-
+        
     def write_example(self, num, outputs, targets, inputs):
         num_batch = outputs.shape[0]
-        # print(outputs.shape)
-        # print(targets.shape)
-        # print(inputs.shape)
         house_cons = inputs[:, 1:]
-        # loss = torch.mean(((torch.max(house_cons + outputs, 1)[0]) - (torch.max(house_cons + targets, 1)[0]))**2)
-#         output_cost = torch.max(house_cons + outputs, 1)[0]
-#         target_cost = torch.max(house_cons + targets, 1)[0]
-#         output_penalty = [0]
-
-#         txt = """Example {}
-# ===============
-
-# Problem
-# ===============
-
-
-# Costs
-# ===============
-# targets cost: {}
-
-
-# output cost: {}
-
-
-# Penalty
-# ===============
-# output penalty: {}
-
-
-# """.format(num, float(target_cost[0]), float(output_cost[0]), output_penalty[0])
-#         self.example_text += txt
-#         print("example_text: ", txt)
         self.plot_writer(outputs, targets, inputs, num)

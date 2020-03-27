@@ -26,33 +26,14 @@ import loss_EDF as loss
 # set to true to one once, then back to false unless you want to change something in your training data.
 CREATE_CSV = True
 PATH_DATA = "./../DATA/"
-# CSV_NAME = "input.csv"
 LOG_DIR = "./../log/"
 MODEL_DIR = "model/"
 BEST_MODELE = "best_model.pt"
-# MODEL_PATH = LOG_DIR + FC1 + BEST_MODELE
-
-# MODELE_LOG_FILE = LOG_DIR + "modele.log"
-# MODELE_TIME = f"model-{int(time.time())}"
 METRICS = "metrics/"
 TENSORBOARD = "tensorboard/"
 DIEZ = "##########"
 
 OUTPUT_VECTOR_SIZE = 94
-
-#TODO: Add Scheduler
-#TODO: Normalize input
-
-# class Normalize(object):
-
-#     def __call__(self, sample):
-#         image = sample['X_image']
-
-#         # landmarks = landmarks.transpose((2, 0, 1))
-#         return {'X_image': (image/255) -0.5,
-#                 'Y': sample['Y']}
-
-# class CrossEntropyOneHot(object):
 
 
 class ModelCheckpoint:
@@ -75,7 +56,6 @@ class ModelCheckpoint:
         if (self.min_loss is None) or (loss < self.min_loss):
             print(DIEZ + " Saving a better model to {} ".format(self.filepath)+DIEZ)
             torch.save(self.model.state_dict(), self.filepath)
-            #torch.save(self.model, self.filepath)
             self.min_loss = loss
             return True
         return False
@@ -107,8 +87,8 @@ def main():
                         help="L2 regularisation (default: 0.001)")
     parser.add_argument("--dropout", default=False, action='store_true',
                         help="Activate or not dropout")
-    parser.add_argument("--network", type=str, default="FC",
-                        help="Type of network used (default: FC)")
+    parser.add_argument("--network", type=str, default="CNN",
+                        help="Type of network used (default: CNN)")
 
     parser.add_argument("--num_json_max", type=int, default=10,
                         help="Maximum number of json file to load in csv (default: 10)")
@@ -116,10 +96,6 @@ def main():
                         help="Path to json files (default: ./../DATA/json_data/")
     parser.add_argument("--num_in_var", type=int, default=OUTPUT_VECTOR_SIZE + 1,
                         help="Number of input variables (default: 94 + 1)")
-    # parser.add_argument("--num_const", type=int, default=8,
-    #                     help="number of constrains (default: 8)")
-    # parser.add_argument("--num_prob", type=int, default=10,
-    #                     help="number of problems to generate (default: 10)")
     parser.add_argument("--loss", type=str, default="MSE",
                         help="Use of custom loss (default: MSE)")
     parser.add_argument("--num_deep_layer", type=int, default=1,
@@ -177,15 +153,6 @@ def main():
                              shuffle=True,
                              num_workers=args.num_threads)
 
-    # i = 0
-    # for (inputs, targets) in train_loader:
-    #     if i > 10:
-    #         break
-    #     i += 1
-    #     print("input:\n", inputs)
-    #     print("target:\n", targets)
-
-    # assert(False)
     #print info
     print("Size of input variables: ", args.num_in_var)
     # print("number of const: ", args.num_const)
@@ -199,10 +166,10 @@ def main():
     #     model = nw.FullyConnectedRegularized(
     #         num_in_var=OUTPUT_VECTOR_SIZE + 1, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
     # elif args.network == "CNN":
-    #     model = nw.CNN(num_in_var=OUTPUT_VECTOR_SIZE, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
+    #     model = nw.CNN2(num_in_var=OUTPUT_VECTOR_SIZE, num_out_var=OUTPUT_VECTOR_SIZE, num_depth=args.num_deep_layer, num_neur=args.num_neur, dropout=args.dropout)
     # else:
     #     assert(False), "Selected network not correct: {}".format(args.network)
-    
+
     print(args.dropout)
     model = nw.CNN2(dropout=args.dropout, num_neur= args.num_neur, num_depth= args.num_deep_layer)
 
@@ -233,14 +200,15 @@ def main():
         print("GCL used with alpha: {}".format(args.alpha))
         loss_name = "GCL/"
         f_loss = loss.GuidedCostLoss(alpha=args.alpha, beta=args.beta)
-    # f_loss = loss.IntervalCostLoss(alpha = args.alpha, beta = args.beta)
 
     #define optimizer
-    # optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
-    optimizer = torch.optim.Adam(model.parameters())
-
+    optimizer = torch.optim.Adam(model.parameters(), weight_decay=args.l2_reg)
+    
+    
+    #Setting learning rate
     # for param_group in optimizer.param_groups:
     #     param_group['lr'] = 1e-3
+
     #Make run directory
     run_name = "runV{}D{}N{}Net{}L{}A{}B{}-".format(
         args.num_in_var, args.num_deep_layer, args.num_neur, args.network, args.loss, args.alpha, args.beta)
@@ -277,7 +245,6 @@ def main():
         for t in range(args.epoch):
             pbar.update(1)
             pbar.set_description("Epoch {}".format(t))
-            # print("\n\n",DIEZ + "Epoch Number: {}".format(t) + DIEZ)
 
             #train
             train_loss, train_acc, train_cost, train_penalty = nw.train(
@@ -292,8 +259,6 @@ def main():
                 model, test_loader, f_loss, device)
 
             progress(val_loss, val_acc, description="Validation")
-            # print("\n\n","Validation : Loss : {:.4f}, Acc : {:.4f}".format(
-            #     val_loss, val_acc))
 
             #check if model is best and save it if it is
             if model_checkpoint.update(val_loss):
@@ -323,9 +288,11 @@ def main():
     total_run_time = time.time() - start_time
     print("--- %s seconds ---" % (total_run_time))
 
+    #Load best model
     model.load_state_dict(torch.load(path_model_check_point + BEST_MODELE))
     print(DIEZ+" Final Test "+DIEZ)
 
+    #Final test
     test_loss, test_acc, test_cost, test_penalty = nw.test(
         model, test_loader, f_loss, device, final_test=True, log_manager=LogManager)
     print("Test       : Loss : {:.4f}, Acc : {:.4f}".format(
